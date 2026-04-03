@@ -1,8 +1,7 @@
 
 /* =========================================================
-   Booha Destruction — Theme 1
+   Booha Destruction — Theme 1  (HUD-on-canvas edition)
    destruction_theme_1.css
-   Clean, readable, slightly spooky-cute
 ========================================================= */
 
 * {
@@ -27,18 +26,18 @@ html, body {
   flex-direction: column;
 }
 
-/* Background layer */
 .bg-layer {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.05), transparent 40%),
-              radial-gradient(circle at 80% 70%, rgba(255,200,255,0.04), transparent 50%),
-              #0d0c10;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.04), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255,200,255,0.03), transparent 50%),
+    #0d0c10;
   z-index: 0;
 }
 
 /* =========================================================
-   TOP BAR
+   TOP BAR — minimal, just title + buttons
 ========================================================= */
 
 .topbar {
@@ -47,22 +46,11 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
-  background: rgba(20,18,26,0.85);
+  padding: 8px 14px;
+  background: rgba(14,12,20,0.9);
   backdrop-filter: blur(6px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.game-title {
-  margin: 0;
-  font-size: 16px;
-  letter-spacing: 1px;
-}
-
-.subtitle {
-  margin: 0;
-  font-size: 11px;
-  opacity: 0.7;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  gap: 10px;
 }
 
 .title-stack {
@@ -70,33 +58,66 @@ html, body {
   flex-direction: column;
 }
 
-.topbar-right {
-  display: flex;
-  gap: 8px;
+.game-title {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
 }
 
-.stat-chip {
+.subtitle {
+  margin: 0;
+  font-size: 10px;
+  opacity: 0.5;
+  letter-spacing: 0.5px;
+}
+
+/* Compact button row in topbar */
+.topbar-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.ui-btn {
+  padding: 6px 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
   background: rgba(255,255,255,0.06);
-  padding: 6px 10px;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 60px;
+  color: #f5f5f5;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 
-.stat-label {
-  font-size: 9px;
-  opacity: 0.6;
+.ui-btn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.2);
 }
 
-.stat-value {
-  font-size: 13px;
-  font-weight: 600;
+.ui-btn.primary {
+  background: linear-gradient(135deg, #ff7cfb88, #8ce3ff88);
+  border-color: rgba(255,255,255,0.25);
+  font-weight: 700;
+  color: #fff;
+}
+
+.ui-btn.primary:hover {
+  background: linear-gradient(135deg, #ff7cfbaa, #8ce3ffaa);
+}
+
+.ui-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Spacer between brand and buttons */
+.topbar-spacer {
+  flex: 1;
 }
 
 /* =========================================================
-   MAIN LAYOUT
+   MAIN LAYOUT — full width game, no side panel
 ========================================================= */
 
 .game-shell {
@@ -112,7 +133,7 @@ html, body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px;
+  padding: 8px;
 }
 
 .game-frame {
@@ -122,9 +143,9 @@ html, body {
   max-width: 1280px;
   max-height: 720px;
   background: #111;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
 }
 
 canvas {
@@ -133,55 +154,11 @@ canvas {
 }
 
 /* =========================================================
-   HUD
+   SIDE PANEL — hidden (HUD is now on-canvas)
 ========================================================= */
 
-.hud-overlay {
-  position: absolute;
-  z-index: 3;
-}
-
-.hud-top-left {
-  top: 10px;
-  left: 10px;
-}
-
-.hud-bottom-left {
-  bottom: 10px;
-  left: 10px;
-}
-
-.hud-card {
-  background: rgba(0,0,0,0.5);
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 12px;
-}
-
-.hud-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.hud-key {
-  opacity: 0.6;
-}
-
-.hud-value {
-  font-weight: bold;
-}
-
-.instruction-card {
-  background: rgba(0,0,0,0.55);
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-}
-
-.instruction-line.jp {
-  font-size: 11px;
-  opacity: 0.7;
+.side-panel {
+  display: none;
 }
 
 /* =========================================================
@@ -195,6 +172,7 @@ canvas {
   align-items: center;
   justify-content: center;
   z-index: 5;
+  pointer-events: none;
 }
 
 .center-message.hidden {
@@ -202,116 +180,60 @@ canvas {
 }
 
 .message-panel {
-  background: rgba(0,0,0,0.75);
-  padding: 20px 28px;
-  border-radius: 16px;
+  background: rgba(0,0,0,0.78);
+  padding: 22px 36px;
+  border-radius: 18px;
   text-align: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
 }
 
 .message-title {
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
 }
 
 .message-sub {
   font-size: 13px;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 /* =========================================================
-   SIDE PANEL
+   HUD overlays (kept for DOM elements, now mostly on-canvas)
+   These can be left in HTML for accessibility fallback.
 ========================================================= */
 
-.side-panel {
-  width: 240px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.hud-overlay {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
 }
 
-.panel-card {
-  background: rgba(255,255,255,0.04);
-  border-radius: 12px;
-  padding: 12px;
+.hud-top-left  { top: 10px; left: 10px; }
+.hud-bottom-left { bottom: 10px; left: 10px; }
+
+/* Instruction card stays — small, bottom-left */
+.instruction-card {
+  background: rgba(0,0,0,0.5);
+  padding: 7px 11px;
+  border-radius: 9px;
+  font-size: 11px;
+  opacity: 0.75;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
-.panel-title {
-  margin: 0 0 8px 0;
-  font-size: 13px;
+.instruction-line.jp {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 2px;
 }
 
-.progress-bar {
-  height: 10px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 6px;
-  overflow: hidden;
+/* Target/Blocks labels — hide since they're now on-canvas */
+.hud-card {
+  display: none;
 }
-
-.progress-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #ff7cfb, #8ce3ff);
-}
-
-.status-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.status-item {
-  display: flex;
-  justify-content: space-between;
-}
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-
-.ui-btn {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.08);
-  color: white;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.ui-btn:hover {
-  background: rgba(255,255,255,0.14);
-}
-
-.ui-btn.primary {
-  background: linear-gradient(135deg, #ff7cfb, #8ce3ff);
-  color: black;
-  font-weight: bold;
-}
-
-.ui-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* =========================================================
-   MATERIAL DOTS
-========================================================= */
-
-.mat-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 6px;
-}
-
-.mat-dot.wood { background: #b97c4d; }
-.mat-dot.stone { background: #78808f; }
-.mat-dot.glass { background: #b7ecff; }
-.mat-dot.soft { background: #f6b0da; }
 
 /* =========================================================
    ROTATE OVERLAY
@@ -338,11 +260,12 @@ canvas {
 .rotate-title {
   font-size: 18px;
   margin-bottom: 6px;
+  font-weight: 700;
 }
 
 .rotate-sub {
   font-size: 13px;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 /* =========================================================
@@ -350,15 +273,18 @@ canvas {
 ========================================================= */
 
 @media (max-width: 900px) {
-  .side-panel {
+  .topbar {
+    padding: 5px 10px;
+  }
+  .game-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
     display: none;
   }
-
-  .topbar {
-    padding: 6px 10px;
-  }
-
-  .game-title {
-    font-size: 13px;
+  .ui-btn {
+    padding: 5px 10px;
+    font-size: 11px;
   }
 }
