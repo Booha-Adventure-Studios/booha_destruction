@@ -214,8 +214,10 @@
   }
 
   function updateUI() {
-    const level = LEVELS[state.levelIndex] || LEVELS[0];
-    const target = level?.targetPercent || WIN_TARGET;
+  const level = LEVELS[state.levelIndex];
+  if (!level) return;
+
+  const target = level.targetPercent || WIN_TARGET;
 
     if (els.levelLabel) els.levelLabel.textContent = String(level?.id || 1);
     if (els.ghostsLabel) els.ghostsLabel.textContent = String(state.ghostsLeft);
@@ -245,22 +247,28 @@
     };
   }
 
-  function cloneBlock(def) {
-    return {
-      x: def.x,
-      y: def.y,
-      w: def.w,
-      h: def.h,
-      material: def.material || 'wood',
-      hp: def.hp || 1,
-      maxHp: def.hp || 1,
-      broken: false,
-      shake: 0,
-      vy: 0,
-      fallen: false,
-      hitFlash: 0,
-      points: 100
-    };
+function cloneBlock(def) {
+  const y =
+    typeof def.floorOffset === 'number'
+      ? FLOOR_Y - def.floorOffset
+      : def.y;
+
+  return {
+    x: def.x,
+    y,
+    w: def.w,
+    h: def.h,
+    material: def.material || 'wood',
+    hp: def.hp || 1,
+    maxHp: def.hp || 1,
+    broken: false,
+    shake: 0,
+    vy: 0,
+    fallen: false,
+    hitFlash: 0,
+    points: 100
+  };
+}
   }
 
   function resetRoundState() {
@@ -330,7 +338,20 @@
     const p = worldPoint(evt);
     state.pointer = p;
 
-    if (dist(p.x, p.y, state.booha.x, state.booha.y) <= state.booha.radius + 18) {
+    const hitDist = dist(p.x, p.y, state.booha.x, state.booha.y);
+const hitRadius = state.booha.radius + 20;
+
+console.log('[SLING]', {
+  pointer: p,
+  booha: { x: state.booha.x, y: state.booha.y },
+  hitDist,
+  hitRadius,
+  hit: hitDist <= hitRadius,
+  scale: state.scale
+});
+
+if (hitDist <= hitRadius) {
+      
       state.pointerDown = true;
       state.dragging = true;
       state.currentState = 'Pulling';
