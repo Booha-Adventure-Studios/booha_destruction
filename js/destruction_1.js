@@ -580,21 +580,41 @@ if (hitDist <= hitRadius) {
     updateUI();
   }
 
-  function drawBackground() {
-    if (state.images.bg) {
-      ctx.drawImage(state.images.bg, 0, 0, WIDTH, HEIGHT);
-    } else {
-      const g = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-      g.addColorStop(0, '#292733');
-      g.addColorStop(1, '#121015');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    }
+ function drawBooha() {
+  const b = state.booha;
+  if (!b) return;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(0, HEIGHT - GROUND_HEIGHT, WIDTH, GROUND_HEIGHT);
+  // DEBUG: show hit zone - remove when slingshot is working
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.radius + 20, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(b.x, b.y);
+
+  if (b.launched) {
+    const ang = Math.atan2(b.vy, b.vx) * 0.2;
+    ctx.rotate(ang);
   }
 
+  if (state.images.booha) {
+    ctx.drawImage(state.images.booha, -b.radius * 1.4, -b.radius * 1.4, b.radius * 2.8, b.radius * 2.8);
+  } else {
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(0, 0, b.radius, Math.PI, 0, false);
+    ctx.lineTo(b.radius, 22);
+    ctx.quadraticCurveTo(0, b.radius + 12, -b.radius, 22);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
   function drawSling() {
     const b = state.booha || makeBooha();
     const anchorTopY = SLING_Y - 46;
@@ -824,14 +844,13 @@ if (hitDist <= hitRadius) {
   }
 
   async function boot() {
-    await preload();
-    wireEvents();
-    loadLevel(GAMEPLAY.levelId ? GAMEPLAY.levelId - 1 : 0);
-    resizeCanvas();
-    updateRotateOverlay();
-    render();
-    state.raf = requestAnimationFrame(tick);
-  }
-
+  await preload();
+  resizeCanvas();      // ← must be FIRST so scale is correct before any clicks
+  wireEvents();
+  loadLevel(GAMEPLAY.levelId ? GAMEPLAY.levelId - 1 : 0);
+  updateRotateOverlay();
+  render();
+  state.raf = requestAnimationFrame(tick);
+}
   boot();
 })();
