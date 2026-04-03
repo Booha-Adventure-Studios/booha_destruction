@@ -14,9 +14,9 @@
   const GRAVITY = 0.48;
   const AIR = 0.999;
   const BOUNCE = 0.72;
-  const FLOOR_Y = HEIGHT - 54;
+  const FLOOR_Y = HEIGHT - 100;
   const SLING_X = 212;
-  const SLING_Y = FLOOR_Y - 60;
+  const SLING_Y = FLOOR_Y - 80;
   const MAX_PULL = 130;
   const BOOHA_RADIUS = 34;
   const GROUND_HEIGHT = 54;
@@ -323,7 +323,7 @@
   }
 
  function pointerMove(evt) {
-  if (!state.dragging || !state.booha) return;
+  if (!state.dragging || !state.booha || state.booha.launched) return; // ← add launched check
   const p = worldPoint(evt);
   state.pointer = p;
 
@@ -344,7 +344,7 @@
   
  function pointerUp(evt) {
   if (!state.dragging || !state.booha) return;
-  state.dragging = false;
+  state.dragging = false;      // ← stop pointerMove from moving him
   state.pointerDown = false;
   state.pullPlayed = false;
 
@@ -359,7 +359,7 @@
     state.booha.y = SLING_Y;
     state.currentState = 'Aiming';
     updateUI();
-    return; // ← removed evt.preventDefault() here, it was blocking release
+    return;
   }
 
   const power = mag / MAX_PULL;
@@ -371,7 +371,6 @@
   state.currentState = `Flying ${Math.round(power * 100)}%`;
   playLaunch();
   updateUI();
-  // ← also removed evt.preventDefault() here
 }
 
   // ── Physics ──────────────────────────────────────────────
