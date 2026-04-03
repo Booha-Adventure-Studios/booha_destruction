@@ -514,29 +514,33 @@ function pointerUp(evt) {
   }
 
   function drawSling() {
-    const b = state.booha || makeBooha();
-    const anchorTopY = SLING_Y - 46;
-    const leftX  = SLING_X - 22;
-    const rightX = SLING_X + 22;
+  const b = state.booha || makeBooha();
+  const anchorTopY = SLING_Y - 46;
+  const leftX  = SLING_X - 22;
+  const rightX = SLING_X + 22;
 
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#2a1c16';
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.moveTo(SLING_X - 18, FLOOR_Y + 8);
-    ctx.lineTo(leftX,  anchorTopY);
-    ctx.lineTo(SLING_X, FLOOR_Y + 8);
-    ctx.lineTo(rightX, anchorTopY);
-    ctx.stroke();
+  // Always draw the Y-fork
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#2a1c16';
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(SLING_X - 18, FLOOR_Y + 8);
+  ctx.lineTo(leftX,  anchorTopY);
+  ctx.lineTo(SLING_X, FLOOR_Y + 8);
+  ctx.lineTo(rightX, anchorTopY);
+  ctx.stroke();
 
+  // Only draw the elastic band when aiming or dragging — NOT when launched
+  if (!b.launched) {
     ctx.strokeStyle = '#5c3a2c';
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(leftX, anchorTopY);
-    ctx.lineTo(state.dragging || b.launched ? b.x : SLING_X, state.dragging || b.launched ? b.y : SLING_Y);
+    ctx.lineTo(state.dragging ? b.x : SLING_X, state.dragging ? b.y : SLING_Y);
     ctx.lineTo(rightX, anchorTopY);
     ctx.stroke();
   }
+}
 
   function drawBooha() {
     const b = state.booha;
