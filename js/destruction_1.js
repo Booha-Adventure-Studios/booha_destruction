@@ -78,7 +78,7 @@
       confetti:{ colors:['#aaeeff','#ddf5ff','#88ddff','#ffffff','#ccf5ff'], shapes:['crystal','star'],          size:[5,13],  burst:70,  spin:true  }},
     { id:'fire',      name:'Fire',      img:'./assets/images/fire_booha.png',      sfx:'./assets/audio/boo-fire.mp3',      stock:2,
       confetti:{ colors:['#ff3300','#ff7700','#ffaa00','#ffee00','#ff5500'], shapes:['flame','circle'],          size:[6,14],  burst:90,  spin:false }},
-    { id:'princess',  name:'Princess',  img:'./assets/images/proncess_booha.png',  sfx:'./assets/audio/boo-princess.mp3',  stock:1,
+    { id:'princess',  name:'Princess',  img:'./assets/images/princess_booha.png',  sfx:'./assets/audio/boo-princess.mp3',  stock:1,
       confetti:{ colors:['#ff88cc','#ffaadd','#cc44aa','#ffddee','#ffffff'], shapes:['heart','star','circle'],   size:[5,11],  burst:100, spin:true  }},
     { id:'nightmare', name:'Nightmare', img:'./assets/images/nightmare_booha.png', sfx:'./assets/audio/boo-nightmare.mp3', stock:1,
       confetti:{ colors:['#220033','#440066','#8800aa','#bb00ff','#440044'], shapes:['shard','star'],            size:[5,14],  burst:75,  spin:true  }},
