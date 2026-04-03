@@ -322,19 +322,26 @@
     }
   }
 
-  function pointerMove(evt) {
-    if (!state.dragging || !state.booha) return;
-    const p = worldPoint(evt);
-    state.pointer = p;
-    const dx = p.x - SLING_X;
-    const dy = p.y - SLING_Y;
-    const ang = Math.atan2(dy, dx);
-    const d = Math.min(MAX_PULL, Math.hypot(dx, dy));
-    state.booha.x = SLING_X + Math.cos(ang) * d;
-    state.booha.y = SLING_Y + Math.sin(ang) * d;
-    evt.preventDefault?.();
-  }
+ function pointerMove(evt) {
+  if (!state.dragging || !state.booha) return;
+  const p = worldPoint(evt);
+  state.pointer = p;
 
+  const dx = p.x - SLING_X;
+  const dy = p.y - SLING_Y;
+  const ang = Math.atan2(dy, dx);
+  const d = Math.min(MAX_PULL, Math.hypot(dx, dy));
+
+  const newX = SLING_X + Math.cos(ang) * d;
+  const newY = SLING_Y + Math.sin(ang) * d;
+
+  // Don't let Booha go below the floor while in slingshot
+  state.booha.x = newX;
+  state.booha.y = Math.min(newY, FLOOR_Y - state.booha.radius - 4);
+
+  evt.preventDefault?.();
+}
+  
  function pointerUp(evt) {
   if (!state.dragging || !state.booha) return;
   state.dragging = false;
