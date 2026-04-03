@@ -95,49 +95,11 @@
     raf: 0
   };
 
-  const LEVELS = [
-    {
-      id: 1,
-      ghosts: 3,
-      targetPercent: 100,
-      blocks: [
-        { x: 900, y: FLOOR_Y - 40, w: 90, h: 40, material: 'wood', hp: 1 },
-        { x: 994, y: FLOOR_Y - 40, w: 90, h: 40, material: 'wood', hp: 1 },
-        { x: 947, y: FLOOR_Y - 88, w: 170, h: 24, material: 'stone', hp: 2 },
-        { x: 947, y: FLOOR_Y - 140, w: 90, h: 40, material: 'glass', hp: 1 },
-        { x: 947, y: FLOOR_Y - 188, w: 130, h: 24, material: 'soft', hp: 1 }
-      ]
-    },
-    {
-      id: 2,
-      ghosts: 3,
-      targetPercent: 100,
-      blocks: [
-        { x: 890, y: FLOOR_Y - 40, w: 78, h: 40, material: 'stone', hp: 2 },
-        { x: 974, y: FLOOR_Y - 40, w: 78, h: 40, material: 'stone', hp: 2 },
-        { x: 1058, y: FLOOR_Y - 40, w: 78, h: 40, material: 'stone', hp: 2 },
-        { x: 932, y: FLOOR_Y - 96, w: 24, h: 72, material: 'wood', hp: 1 },
-        { x: 1016, y: FLOOR_Y - 96, w: 24, h: 72, material: 'wood', hp: 1 },
-        { x: 974, y: FLOOR_Y - 132, w: 170, h: 24, material: 'glass', hp: 1 },
-        { x: 974, y: FLOOR_Y - 182, w: 90, h: 40, material: 'soft', hp: 1 }
-      ]
-    },
-    {
-      id: 3,
-      ghosts: 3,
-      targetPercent: 100,
-      blocks: [
-        { x: 920, y: FLOOR_Y - 40, w: 80, h: 40, material: 'wood', hp: 1 },
-        { x: 1004, y: FLOOR_Y - 40, w: 80, h: 40, material: 'wood', hp: 1 },
-        { x: 962, y: FLOOR_Y - 88, w: 180, h: 24, material: 'stone', hp: 2 },
-        { x: 920, y: FLOOR_Y - 152, w: 24, h: 96, material: 'glass', hp: 1 },
-        { x: 1004, y: FLOOR_Y - 152, w: 24, h: 96, material: 'glass', hp: 1 },
-        { x: 962, y: FLOOR_Y - 198, w: 150, h: 24, material: 'stone', hp: 2 },
-        { x: 962, y: FLOOR_Y - 246, w: 88, h: 40, material: 'soft', hp: 1 },
-        { x: 962, y: FLOOR_Y - 292, w: 130, h: 24, material: 'wood', hp: 1 }
-      ]
-    }
-  ];
+  const LEVELS = window.BOOHA_DESTRUCTION_LEVELS || [];
+
+  if (!LEVELS.length) {
+  console.error('Booha Destruction: no levels found in window.BOOHA_DESTRUCTION_LEVELS');
+}
 
   function makeImage(src) {
     return new Promise((resolve) => {
