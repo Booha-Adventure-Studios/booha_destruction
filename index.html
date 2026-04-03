@@ -5,111 +5,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Booha Destruction</title>
-  <meta name="theme-color" content="#111111" />
+  <meta name="theme-color" content="#000000" />
   <link rel="preload" href="./assets/images/destruction-1.png" as="image" />
-  <link rel="preload" href="./assets/images/booha_helmet.png" as="image" />
-  <link rel="stylesheet" href="./theme/destruction_theme_1.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      overflow: hidden;
+      /* Prevent pull-to-refresh on mobile */
+      overscroll-behavior: none;
+    }
+    #gameCanvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    /* Portrait lock overlay */
+    #rotateOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, sans-serif;
+      align-items: center; justify-content: center;
+      text-align: center; z-index: 9999;
+    }
+    #rotateOverlay.show { display: flex; }
+    #rotateOverlay p { font-size: 18px; opacity: 0.8; margin-top: 8px; }
+  </style>
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <div class="bg-layer" aria-hidden="true"></div>
+  <canvas id="gameCanvas" aria-label="Booha Destruction"></canvas>
 
-    <!-- TOP BAR: brand + all buttons inline -->
-    <header class="topbar">
-      <div class="title-stack">
-        <h1 class="game-title">BOOHA DESTRUCTION</h1>
-        <p class="subtitle">3 ghosts · smash everything</p>
-      </div>
-
-      <div class="topbar-spacer"></div>
-
-      <div class="topbar-buttons">
-        <button id="startBtn" class="ui-btn primary" type="button">Start</button>
-        <button id="retryBtn" class="ui-btn" type="button">Retry</button>
-        <button id="nextBtn"  class="ui-btn" type="button" disabled>Next Level</button>
-        <button id="muteBtn"  class="ui-btn" type="button" aria-pressed="false">Sound: On</button>
-      </div>
-    </header>
-
-    <main class="game-shell">
-      <section class="playfield-wrap">
-        <div id="gameFrame" class="game-frame">
-          <canvas id="gameCanvas" width="1280" height="720" aria-label="Booha Destruction game area"></canvas>
-
-          <!-- Accessibility fallback labels (hidden visually, screen-reader accessible) -->
-          <div class="hud-overlay hud-top-left" aria-hidden="true">
-            <div class="hud-card">
-              <div>Target: <span id="targetLabel">100%</span></div>
-              <div>Blocks: <span id="blocksLabel">0</span></div>
-            </div>
-          </div>
-
-          <!-- Instruction hint (bottom-left, low-opacity) -->
-          <div class="hud-overlay hud-bottom-left">
-            <div class="instruction-card">
-              <div class="instruction-line">Drag Booha back and release.</div>
-              <div class="instruction-line jp">ブーハーをひっぱって、はなそう。</div>
-            </div>
-          </div>
-
-          <!-- Center message overlay -->
-          <div id="centerMessage" class="center-message hidden" aria-live="polite">
-            <div class="message-panel">
-              <div id="centerMessageTitle" class="message-title">READY?</div>
-              <div id="centerMessageSub"   class="message-sub">Pull to launch.</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Side panel removed — HUD now lives on canvas -->
-    </main>
-  </div>
-
-  <!-- Rotate prompt for portrait mobile -->
-  <div id="rotateOverlay" class="rotate-overlay hidden" aria-hidden="true">
-    <div class="rotate-card">
-      <div class="rotate-title">Rotate your device</div>
-      <div class="rotate-sub">Please use landscape mode.</div>
-      <div class="rotate-sub" style="font-size:12px;margin-top:4px;opacity:0.5;">横向きでつかってください。</div>
+  <div id="rotateOverlay">
+    <div>
+      <div style="font-size:48px">↺</div>
+      <p>Please rotate to landscape</p>
+      <p style="font-size:13px;margin-top:4px;opacity:0.5">横向きでつかってください</p>
     </div>
   </div>
 
   <script>
-    window.BOOHA_DESTRUCTION_CONFIG = {
+    window.BOOHA_CFG = {
       canvasId: 'gameCanvas',
-      frameId:  'gameFrame',
-      ui: {
-        /* These IDs still exist for screen-reader / updateUI compat */
-        levelLabel:         'levelLabel',
-        ghostsLabel:        'ghostsLabel',
-        damageLabel:        'damageLabel',
-        targetLabel:        'targetLabel',
-        blocksLabel:        'blocksLabel',
-        progressText:       'progressText',
-        progressFill:       'progressFill',
-        stateLabel:         'stateLabel',
-        materialLabel:      'materialLabel',
-        shotLabel:          'shotLabel',
-        centerMessage:      'centerMessage',
-        centerMessageTitle: 'centerMessageTitle',
-        centerMessageSub:   'centerMessageSub',
-        rotateOverlay:      'rotateOverlay'
-      },
-      buttons: {
-        start: 'startBtn',
-        retry: 'retryBtn',
-        next:  'nextBtn',
-        mute:  'muteBtn'
-      },
       assets: {
-        background: './assets/images/destruction-1.png',
-        booha:      './assets/images/booha_helmet.png'
+        bg: './assets/images/destruction-1.png'
       },
       audio: {
         pull:   './assets/audio/pull.mp3',
         launch: './assets/audio/launch.mp3',
-        booha:  './assets/audio/booha.mp3',
         wood:   './assets/audio/wood.mp3',
         stone:  './assets/audio/stone.mp3',
         glass:  './assets/audio/glass.mp3',
@@ -121,24 +69,19 @@
         fail:   './assets/audio/fail.mp3'
       },
       gameplay: {
-        width:          1280,
-        height:         720,
         ghostsPerRound: 3,
-        targetPercent:  100,
-        levelId:        1
+        targetPercent:  100
       }
     };
 
-    /* Invisible DOM nodes so updateUI() doesn't throw on missing IDs */
-    ['levelLabel','ghostsLabel','damageLabel','progressText','progressFill',
-     'stateLabel','materialLabel','shotLabel'].forEach(id => {
-      if (!document.getElementById(id)) {
-        const el = document.createElement('span');
-        el.id = id;
-        el.style.display = 'none';
-        document.body.appendChild(el);
-      }
-    });
+    // Portrait detection
+    function checkRotate() {
+      const ro = document.getElementById('rotateOverlay');
+      const portrait = window.innerWidth < 600 && window.innerHeight > window.innerWidth;
+      ro.classList.toggle('show', portrait);
+    }
+    window.addEventListener('resize', checkRotate);
+    checkRotate();
   </script>
 
   <script src="./js/destruction_levels_1.js"></script>
