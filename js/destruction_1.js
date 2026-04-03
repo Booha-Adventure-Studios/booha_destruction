@@ -269,7 +269,7 @@ function cloneBlock(def) {
     points: 100
   };
 }
-  }
+  
 
   function resetRoundState() {
     state.pointerDown = false;
