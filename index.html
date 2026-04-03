@@ -14,27 +14,20 @@
   <div id="app" class="app-shell">
     <div class="bg-layer" aria-hidden="true"></div>
 
+    <!-- TOP BAR: brand + all buttons inline -->
     <header class="topbar">
-      <div class="brand-wrap">
-        <div class="title-stack">
-          <h1 class="game-title">BOOHA DESTRUCTION</h1>
-          <p class="subtitle">3 ghosts. Smash everything.</p>
-        </div>
+      <div class="title-stack">
+        <h1 class="game-title">BOOHA DESTRUCTION</h1>
+        <p class="subtitle">3 ghosts · smash everything</p>
       </div>
 
-      <div class="topbar-right">
-        <div class="stat-chip">
-          <span class="stat-label">Level</span>
-          <span id="levelLabel" class="stat-value">1</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-label">Ghosts</span>
-          <span id="ghostsLabel" class="stat-value">3</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-label">Damage</span>
-          <span id="damageLabel" class="stat-value">0%</span>
-        </div>
+      <div class="topbar-spacer"></div>
+
+      <div class="topbar-buttons">
+        <button id="startBtn" class="ui-btn primary" type="button">Start</button>
+        <button id="retryBtn" class="ui-btn" type="button">Retry</button>
+        <button id="nextBtn"  class="ui-btn" type="button" disabled>Next Level</button>
+        <button id="muteBtn"  class="ui-btn" type="button" aria-pressed="false">Sound: On</button>
       </div>
     </header>
 
@@ -43,19 +36,15 @@
         <div id="gameFrame" class="game-frame">
           <canvas id="gameCanvas" width="1280" height="720" aria-label="Booha Destruction game area"></canvas>
 
-          <div class="hud-overlay hud-top-left">
-            <div class="hud-card compact">
-              <div class="hud-row">
-                <span class="hud-key">Target</span>
-                <span id="targetLabel" class="hud-value">100%</span>
-              </div>
-              <div class="hud-row">
-                <span class="hud-key">Blocks Left</span>
-                <span id="blocksLabel" class="hud-value">0</span>
-              </div>
+          <!-- Accessibility fallback labels (hidden visually, screen-reader accessible) -->
+          <div class="hud-overlay hud-top-left" aria-hidden="true">
+            <div class="hud-card">
+              <div>Target: <span id="targetLabel">100%</span></div>
+              <div>Blocks: <span id="blocksLabel">0</span></div>
             </div>
           </div>
 
+          <!-- Instruction hint (bottom-left, low-opacity) -->
           <div class="hud-overlay hud-bottom-left">
             <div class="instruction-card">
               <div class="instruction-line">Drag Booha back and release.</div>
@@ -63,129 +52,96 @@
             </div>
           </div>
 
+          <!-- Center message overlay -->
           <div id="centerMessage" class="center-message hidden" aria-live="polite">
             <div class="message-panel">
               <div id="centerMessageTitle" class="message-title">READY?</div>
-              <div id="centerMessageSub" class="message-sub">Pull to launch.</div>
+              <div id="centerMessageSub"   class="message-sub">Pull to launch.</div>
             </div>
           </div>
         </div>
       </section>
 
-      <aside class="side-panel">
-        <div class="panel-card status-card">
-          <h2 class="panel-title">Round</h2>
-          <div class="progress-block">
-            <div class="progress-head">
-              <span>Destruction</span>
-              <span id="progressText">0%</span>
-            </div>
-            <div class="progress-bar">
-              <div id="progressFill" class="progress-fill"></div>
-            </div>
-          </div>
-
-          <div class="status-list">
-            <div class="status-item">
-              <span class="status-name">Current State</span>
-              <span id="stateLabel" class="status-value">Waiting</span>
-            </div>
-            <div class="status-item">
-              <span class="status-name">Material Hit</span>
-              <span id="materialLabel" class="status-value">—</span>
-            </div>
-            <div class="status-item">
-              <span class="status-name">Best Shot</span>
-              <span id="shotLabel" class="status-value">—</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel-card controls-card">
-          <h2 class="panel-title">Controls</h2>
-          <div class="btn-stack">
-            <button id="startBtn" class="ui-btn primary" type="button">Start</button>
-            <button id="retryBtn" class="ui-btn" type="button">Retry Level</button>
-            <button id="nextBtn" class="ui-btn" type="button" disabled>Next Level</button>
-            <button id="muteBtn" class="ui-btn" type="button" aria-pressed="false">Sound: On</button>
-          </div>
-        </div>
-
-        <div class="panel-card legend-card">
-          <h2 class="panel-title">Materials</h2>
-          <ul class="legend-list">
-            <li><span class="mat-dot wood"></span> Wood</li>
-            <li><span class="mat-dot stone"></span> Stone</li>
-            <li><span class="mat-dot glass"></span> Glass</li>
-            <li><span class="mat-dot soft"></span> Soft</li>
-          </ul>
-        </div>
-      </aside>
+      <!-- Side panel removed — HUD now lives on canvas -->
     </main>
   </div>
 
+  <!-- Rotate prompt for portrait mobile -->
   <div id="rotateOverlay" class="rotate-overlay hidden" aria-hidden="true">
     <div class="rotate-card">
       <div class="rotate-title">Rotate your device</div>
       <div class="rotate-sub">Please use landscape mode.</div>
-      <div class="rotate-sub jp">横向きでつかってください。</div>
+      <div class="rotate-sub" style="font-size:12px;margin-top:4px;opacity:0.5;">横向きでつかってください。</div>
     </div>
   </div>
 
   <script>
     window.BOOHA_DESTRUCTION_CONFIG = {
       canvasId: 'gameCanvas',
-      frameId: 'gameFrame',
+      frameId:  'gameFrame',
       ui: {
-        levelLabel: 'levelLabel',
-        ghostsLabel: 'ghostsLabel',
-        damageLabel: 'damageLabel',
-        targetLabel: 'targetLabel',
-        blocksLabel: 'blocksLabel',
-        progressText: 'progressText',
-        progressFill: 'progressFill',
-        stateLabel: 'stateLabel',
-        materialLabel: 'materialLabel',
-        shotLabel: 'shotLabel',
-        centerMessage: 'centerMessage',
+        /* These IDs still exist for screen-reader / updateUI compat */
+        levelLabel:         'levelLabel',
+        ghostsLabel:        'ghostsLabel',
+        damageLabel:        'damageLabel',
+        targetLabel:        'targetLabel',
+        blocksLabel:        'blocksLabel',
+        progressText:       'progressText',
+        progressFill:       'progressFill',
+        stateLabel:         'stateLabel',
+        materialLabel:      'materialLabel',
+        shotLabel:          'shotLabel',
+        centerMessage:      'centerMessage',
         centerMessageTitle: 'centerMessageTitle',
-        centerMessageSub: 'centerMessageSub',
-        rotateOverlay: 'rotateOverlay'
+        centerMessageSub:   'centerMessageSub',
+        rotateOverlay:      'rotateOverlay'
       },
       buttons: {
         start: 'startBtn',
         retry: 'retryBtn',
-        next: 'nextBtn',
-        mute: 'muteBtn'
+        next:  'nextBtn',
+        mute:  'muteBtn'
       },
       assets: {
         background: './assets/images/destruction-1.png',
-        booha: './assets/images/booha_helmet.png'
+        booha:      './assets/images/booha_helmet.png'
       },
       audio: {
-        pull: './assets/audio/pull.mp3',
+        pull:   './assets/audio/pull.mp3',
         launch: './assets/audio/launch.mp3',
-        booha: './assets/audio/booha.mp3',
-        wood: './assets/audio/wood.mp3',
-        stone: './assets/audio/stone.mp3',
-        glass: './assets/audio/glass.mp3',
-        soft: './assets/audio/soft.mp3',
-        break: './assets/audio/break.mp3',
+        booha:  './assets/audio/booha.mp3',
+        wood:   './assets/audio/wood.mp3',
+        stone:  './assets/audio/stone.mp3',
+        glass:  './assets/audio/glass.mp3',
+        soft:   './assets/audio/soft.mp3',
+        break:  './assets/audio/break.mp3',
         rubble: './assets/audio/fall_rubble.mp3',
         ground: './assets/audio/ground.mp3',
-        win: './assets/audio/100.mp3',
-        fail: './assets/audio/fail.mp3'
+        win:    './assets/audio/100.mp3',
+        fail:   './assets/audio/fail.mp3'
       },
       gameplay: {
-        width: 1280,
-        height: 720,
+        width:          1280,
+        height:         720,
         ghostsPerRound: 3,
-        targetPercent: 100,
-        levelId: 1
+        targetPercent:  100,
+        levelId:        1
       }
     };
+
+    /* Invisible DOM nodes so updateUI() doesn't throw on missing IDs */
+    ['levelLabel','ghostsLabel','damageLabel','progressText','progressFill',
+     'stateLabel','materialLabel','shotLabel'].forEach(id => {
+      if (!document.getElementById(id)) {
+        const el = document.createElement('span');
+        el.id = id;
+        el.style.display = 'none';
+        document.body.appendChild(el);
+      }
+    });
   </script>
+
   <script src="./js/destruction_levels_1.js"></script>
- <script src="./js/destruction_1.js"></script>
+  <script src="./js/destruction_1.js"></script>
 </body>
 </html>
