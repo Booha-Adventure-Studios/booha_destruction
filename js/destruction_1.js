@@ -335,36 +335,37 @@
     evt.preventDefault?.();
   }
 
-  function pointerUp(evt) {
-    if (!state.dragging || !state.booha) return;
-    state.dragging = false;
-    state.pointerDown = false;
-    state.pullPlayed = false;
+ function pointerUp(evt) {
+  if (!state.dragging || !state.booha) return;
+  state.dragging = false;
+  state.pointerDown = false;
+  state.pullPlayed = false;
 
-    const dx = SLING_X - state.booha.x;
-    const dy = SLING_Y - state.booha.y;
-    const mag = Math.hypot(dx, dy);
+  const dx = SLING_X - state.booha.x;
+  const dy = SLING_Y - state.booha.y;
+  const mag = Math.hypot(dx, dy);
 
-    if (mag < 12) {
-      state.booha.x = SLING_X;
-      state.booha.y = SLING_Y;
-      state.currentState = 'Aiming';
-      updateUI();
-      evt.preventDefault?.();
-      return;
-    }
+  console.log('[RELEASE]', { mag, bx: state.booha.x, by: state.booha.y });
 
-    const power = mag / MAX_PULL;
-    state.booha.vx = dx * 0.19;
-    state.booha.vy = dy * 0.19;
-    state.booha.active = true;
-    state.booha.launched = true;
-    state.booha.damageThisShot = 0;
-    state.currentState = `Flying ${Math.round(power * 100)}%`;
-    playLaunch();
+  if (mag < 12) {
+    state.booha.x = SLING_X;
+    state.booha.y = SLING_Y;
+    state.currentState = 'Aiming';
     updateUI();
-    evt.preventDefault?.();
+    return; // ← removed evt.preventDefault() here, it was blocking release
   }
+
+  const power = mag / MAX_PULL;
+  state.booha.vx = dx * 0.19;
+  state.booha.vy = dy * 0.19;
+  state.booha.active = true;
+  state.booha.launched = true;
+  state.booha.damageThisShot = 0;
+  state.currentState = `Flying ${Math.round(power * 100)}%`;
+  playLaunch();
+  updateUI();
+  // ← also removed evt.preventDefault() here
+}
 
   // ── Physics ──────────────────────────────────────────────
   function damageBlock(block, amount) {
