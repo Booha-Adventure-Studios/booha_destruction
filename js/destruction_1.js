@@ -324,8 +324,8 @@ function cloneBlock(def) {
     const rect = els.canvas.getBoundingClientRect();
     const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
     const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-    const x = (clientX - rect.left - state.offsetX) / state.scale;
-    const y = (clientY - rect.top - state.offsetY) / state.scale;
+    const x = (clientX - rect.left) / state.scale;
+    const y = (clientY - rect.top) / state.scale;
     return { x, y };
   }
 
@@ -334,12 +334,13 @@ function cloneBlock(def) {
   }
 
   function pointerDown(evt) {
-    if (!isBoohaReady()) return;
-    const p = worldPoint(evt);
+  if (!state.booha || state.booha.launched || state.levelWon || state.levelLost) return;
+  if (!state.running) startGame(); // auto-start on first drag
+  const p = worldPoint(evt);
     state.pointer = p;
 
     const hitDist = dist(p.x, p.y, state.booha.x, state.booha.y);
-const hitRadius = state.booha.radius + 20;
+    const hitRadius = state.booha.radius + 20;
 
 console.log('[SLING]', {
   pointer: p,
