@@ -14,10 +14,10 @@
   const GRAVITY = 0.48;
   const AIR = 0.999;
   const BOUNCE = 0.72;
-  const FLOOR_Y = HEIGHT - 100;
-  const SLING_X = 212;
-  const SLING_Y = FLOOR_Y - 80;
-  const MAX_PULL = 130;
+  const FLOOR_Y = HEIGHT - 80;   // raises the white line
+  const SLING_X = 180;           // nudge left slightly
+  const SLING_Y = FLOOR_Y - 120; // much more pull room above floor
+  const MAX_PULL = 150;          // slightly more pull distance
   const BOOHA_RADIUS = 34;
   const GROUND_HEIGHT = 54;
   const MIN_IMPACT = 3.8;
@@ -296,63 +296,48 @@
     };
   }
 
-  function pointerDown(evt) {
-    if (!state.booha || state.booha.launched || state.levelWon || state.levelLost) return;
-    if (!state.running) startGame();
-    const p = worldPoint(evt);
-    state.pointer = p;
-    const hitDist   = dist(p.x, p.y, state.booha.x, state.booha.y);
-    const hitRadius = state.booha.radius + 20;
-
-    console.log('[SLING]', {
-      pointer: p,
-      booha: { x: state.booha.x, y: state.booha.y },
-      hitDist, hitRadius,
-      hit: hitDist <= hitRadius,
-      scale: state.scale
-    });
-
-    if (hitDist <= hitRadius) {
-      state.pointerDown = true;
-      state.dragging = true;
-      state.currentState = 'Pulling';
-      playPull();
-      updateUI();
-      evt.preventDefault?.();
-    }
-  }
-
- function pointerMove(evt) {
-  if (!state.dragging || !state.booha || state.booha.launched) return; // ← add launched check
+ function pointerDown(evt) {
+  if (!state.booha || state.booha.launched || state.levelWon || state.levelLost) return;
+  if (!state.running) startGame();
   const p = worldPoint(evt);
-  state.pointer = p;
+  const hitDist = dist(p.x, p.y, state.booha.x, state.booha.y);
+  if (hitDist > state.booha.radius + 20) return;
+
+  state.dragging = true;
+  state.pointerDown = true;
+  state.pullPlayed = false;
+  state.currentState = 'Pulling';
+  playPull();
+  updateUI();
+  evt.preventDefault();
+  evt.stopPropagation(); // ← stop event bubbling to window mouseup
+}
+
+function pointerMove(evt) {
+  if (!state.dragging || !state.booha || state.booha.launched) return;
+  const p = worldPoint(evt);
 
   const dx = p.x - SLING_X;
   const dy = p.y - SLING_Y;
   const ang = Math.atan2(dy, dx);
   const d = Math.min(MAX_PULL, Math.hypot(dx, dy));
 
-  const newX = SLING_X + Math.cos(ang) * d;
-  const newY = SLING_Y + Math.sin(ang) * d;
-
-  // Don't let Booha go below the floor while in slingshot
-  state.booha.x = newX;
-  state.booha.y = Math.min(newY, FLOOR_Y - state.booha.radius - 4);
-
-  evt.preventDefault?.();
+  state.booha.x = SLING_X + Math.cos(ang) * d;
+  state.booha.y = Math.min(SLING_Y + Math.sin(ang) * d, FLOOR_Y - state.booha.radius - 4);
+  evt.preventDefault();
 }
-  
- function pointerUp(evt) {
-  if (!state.dragging || !state.booha) return;
-  state.dragging = false;      // ← stop pointerMove from moving him
+
+function pointerUp(evt) {
+  if (!state.dragging) return;
+  state.dragging = false;
   state.pointerDown = false;
   state.pullPlayed = false;
+
+  if (!state.booha || state.booha.launched) return;
 
   const dx = SLING_X - state.booha.x;
   const dy = SLING_Y - state.booha.y;
   const mag = Math.hypot(dx, dy);
-
-  console.log('[RELEASE]', { mag, bx: state.booha.x, by: state.booha.y });
 
   if (mag < 12) {
     state.booha.x = SLING_X;
@@ -362,13 +347,16 @@
     return;
   }
 
-  const power = mag / MAX_PULL;
-  state.booha.vx = dx * 0.19;
-  state.booha.vy = dy * 0.19;
+  // Snapshot velocity BEFORE anything else touches booha
+  const vx = dx * 0.19;
+  const vy = dy * 0.19;
+
+  state.booha.vx = vx;
+  state.booha.vy = vy;
   state.booha.active = true;
   state.booha.launched = true;
   state.booha.damageThisShot = 0;
-  state.currentState = `Flying ${Math.round(power * 100)}%`;
+  state.currentState = `Flying ${Math.round((mag / MAX_PULL) * 100)}%`;
   playLaunch();
   updateUI();
 }
