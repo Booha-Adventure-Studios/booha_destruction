@@ -1,7 +1,11 @@
 
-  /* =====================================================
+ /* =====================================================
    BOOHA DESTRUCTION  —  destruction_1.js
    Fullscreen canvas. No DOM shell. All UI on-canvas.
+   
+   ENHANCED: Per-Booha trails, death explosions, pre-explosion tells,
+             confetti physics variation, overkill chain reactions,
+             last-booha drama, damage-dealing confetti (fire/rainbow/ultimate)
    ===================================================== */
 (() => {
   'use strict';
@@ -12,7 +16,6 @@
   const PLAY   = CFG.gameplay|| {};
 
   // ── Layout constants ────────────────────────────────
-  // Internal render size — canvas CSS fills viewport via resize()
   const W = 1280, H = 720;
   const FLOOR_Y      = H - 80;
   const SLING_X      = 190;
@@ -24,9 +27,9 @@
   const BOUNCE       = 0.72;
   const MIN_IMPACT   = 3.8;
   const REST_THR     = 0.35;
-  const SETTLE_NEED  = 38;   // frames resting before confetti pops
-  const NEXT_MS      = 950;  // ms after confetti → next booha appears
-  const CARD_MS      = 3400; // ms result card stays before auto-advance
+  const SETTLE_NEED  = 38;
+  const NEXT_MS      = 950;
+  const CARD_MS      = 3400;
   const HIT_COOL     = 90;
 
   // ── Canvas ──────────────────────────────────────────
@@ -44,11 +47,45 @@
   const waves     = [];
   const dusts     = [];
   const confetti  = [];
-  const powers    = [];   // active power-FX overlay effects
+  const powers    = [];
+  const scorchMarks = [];   // fire scorch spots on blocks
   const shake     = { v:0, decay:0.87 };
 
+  // ── Landscape lock overlay ───────────────────────────
+  // True landscape lock: fires on ANY portrait orientation, not just phones
+  let rotateOverlay = null;
+  function ensureRotateOverlay() {
+    if (rotateOverlay) return;
+    rotateOverlay = document.createElement('div');
+    rotateOverlay.id = 'booha-rotate';
+    Object.assign(rotateOverlay.style, {
+      position:'fixed',top:'0',left:'0',width:'100%',height:'100%',
+      background:'#0c0a12',display:'flex',flexDirection:'column',
+      alignItems:'center',justifyContent:'center',zIndex:'9999',
+      fontFamily:'system-ui,sans-serif',color:'#fff',gap:'24px'
+    });
+    rotateOverlay.innerHTML = `
+      <div style="font-size:72px;animation:rotSpin 2s ease-in-out infinite alternate">📱</div>
+      <div style="font-size:22px;font-weight:bold;letter-spacing:2px">ROTATE TO PLAY</div>
+      <div style="font-size:14px;opacity:0.5">Booha Destruction requires landscape mode</div>
+      <style>@keyframes rotSpin{0%{transform:rotate(-90deg)}100%{transform:rotate(0deg)}}</style>
+    `;
+    document.body.appendChild(rotateOverlay);
+  }
+  function checkOrientation() {
+    const isPortrait = window.innerHeight > window.innerWidth;
+    if (isPortrait) {
+      ensureRotateOverlay();
+      rotateOverlay.style.display = 'flex';
+    } else {
+      if (rotateOverlay) rotateOverlay.style.display = 'none';
+    }
+  }
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', checkOrientation);
+  checkOrientation();
+
   // ── Audio ────────────────────────────────────────────
-  // We use a shared AudioContext resumed on first gesture for reliable playback
   let AC = null;
   function getAC() {
     if (!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
@@ -56,7 +93,6 @@
     return AC;
   }
 
-  // Play a loaded AudioBuffer (for booha voices preloaded as buffers)
   const audioBuffers = {};
   async function loadBuffer(key, src) {
     if (!src || audioBuffers[key]) return;
@@ -80,7 +116,6 @@
     } catch(e) {}
   }
 
-  // Simple Audio element for non-critical SFX
   const sfxMuted = { v: false };
   function playSFX(src, vol=1, rate=1) {
     if (sfxMuted.v || !src) return;
@@ -90,7 +125,6 @@
     a.play().catch(()=>{});
   }
 
-  // Synth pop for confetti
   function synthPop(freq=500, vol=0.3, dur=0.08) {
     try {
       const ac = getAC();
@@ -109,20 +143,6 @@
   }
 
   // ── Booha roster ────────────────────────────────────
-  // Powers: each booha has a unique on-launch or on-hit ability
-  // power: { type, ...params }
-  // Types:
-  //   'normal'    – standard physics, no special
-  //   'heavy'     – bigger radius, deals 2× damage, slow, craters on floor impact
-  //   'rock'      – pierces through one block without bouncing
-  //   'ice'       – freezes hit blocks for 1.5s (can't be broken while frozen, then shatters)
-  //   'fire'      – leaves a fire trail; blocks in radius catch and burn (lose 1 HP over 2s)
-  //   'princess'  – very light, high bounce, heals nothing, but spawns 3 mini boohas on first hit
-  //   'rainbow'   – changes material of hit blocks to glass (fragile), shimmering trail
-  //   'nightmare' – teleports to far side of target, hits from behind
-  //   'monster'   – grows larger each bounce; massive on settle
-  //   'ultimate'  – on settle, detonates every block within radius 280
-
   const ROSTER = [
     { id:'booha',     name:'Booha',     img:'./assets/images/booha_helmet.png',
       sfx:'./assets/audio/boo-boo.mp3',        stock:5,  power:'normal',
@@ -175,14 +195,12 @@
       conf:{cols:['#f08','#f80','#ff0','#0fa','#08f','#c0f','#f48','#4fc'],sh:['star','heart','crystal','sparkle','flame'], sz:[5,16], burst:170, spin:true }},
   ];
 
-  // Selector layout
   const SX=14, SY=70, SW=52, SH=52, SGAP=5;
 
-  const bst = {        // booha selection state
+  const bst = {
     sel:   0,
     stocks: ROSTER.map(b=>b.stock),
     imgs:   new Array(ROSTER.length).fill(null),
-    // Total shots = sum of all stocks (used for ghost count)
     totalShots() { return ROSTER.reduce((a,b)=>a+b.stock,0); }
   };
 
@@ -194,8 +212,8 @@
     dragging: false, pullPlayed: false,
     lastHit: 0, flash: 0, bestShot: 0,
     pct: 0, totalBlocks: 0, brokenBlocks: 0,
-    ghostsLeft: 0,           // total shots remaining this round
-    shotLock: false,          // true while finishShot is being processed
+    ghostsLeft: 0,
+    shotLock: false,
     booha: null,
     blocks: [],
     debTimer: 0,
@@ -203,14 +221,20 @@
     cardTitle: '', cardSub: '', cardAccent: '#fff',
     scale: 1, offX: 0, offY: 0,
     imgs: { bg: null },
-    // Fire trail emitters active this shot
     fireTrail: [],
-    // Mini-boohas (princess power)
     minis: [],
-    // Frozen block timers: Map<blockIdx, framesLeft>
     frozen: new Map(),
-    // Bounce count (monster power)
     bounces: 0,
+    // Last-booha drama state
+    isLastBooha: false,
+    timeScale: 1,       // for last-booha slow motion
+    // Nightmare flicker state
+    nightmareFlicker: false,
+    nightmareFlickerTimer: 0,
+    // Monster layer state (3-stage explosion)
+    monsterExplodeStage: 0,
+    // Damage confetti pool (fire/rainbow/ultimate)
+    damageConfetti: [],
   };
 
   const LEVELS = window.BOOHA_DESTRUCTION_LEVELS || [];
@@ -260,16 +284,13 @@
     gs.imgs.bg = await loadImg(ASSETS.bg);
     const imgs = await Promise.all(ROSTER.map(b=>loadImg(b.img)));
     imgs.forEach((img,i)=>{ bst.imgs[i]=img; });
-    // Preload all booha voice clips as AudioBuffers for reliable playback
     await Promise.all(ROSTER.map(b=>loadBuffer(b.id, b.sfx)));
-    // Preload regular SFX (just warm up paths, Audio() handles it)
   }
 
   // ── Audio helpers ───────────────────────────────────
   function sndPull()   { if (gs.pullPlayed) return; gs.pullPlayed=true; playSFX(AUDIO.pull,0.5,0.98+rnd()*0.06); }
   function sndLaunch() {
     playSFX(AUDIO.launch, 0.88, 0.98+rnd()*0.06);
-    // Play booha voice via AudioBuffer (bypasses autoplay block)
     const r=ROSTER[bst.sel];
     if (r) setTimeout(()=>playBuffer(r.id, 0.85), 55);
   }
@@ -277,7 +298,9 @@
     const now=performance.now(); if(now-gs.lastHit<HIT_COOL)return;
     gs.lastHit=now;
     const src=mat==='stone'?AUDIO.stone:mat==='glass'?AUDIO.glass:mat==='soft'?AUDIO.soft:AUDIO.wood;
-    playSFX(src,Math.max(0.2,Math.min(1,spd/14)),0.92+rnd()*0.18);
+    // Monster: louder each bounce
+    const volMult = gs.booha?.power==='monster' ? Math.min(2, 1+gs.bounces*0.15) : 1;
+    playSFX(src,Math.max(0.2,Math.min(1,spd/14))*volMult,0.92+rnd()*0.18);
     gs.flash=1;
   }
   function sndBreak() { playSFX(AUDIO.break,0.95,0.94+rnd()*0.08); }
@@ -318,21 +341,30 @@
   function spawnWave(x,y,col,maxR=60){ waves.push({x,y,r:4,maxR,life:1,col}); }
   function addShake(v) { shake.v=Math.max(shake.v,v); }
 
-  // Fire trail ember
+  // ── Scorch marks (fire impact) ───────────────────────
+  function spawnScorch(x, y) {
+    scorchMarks.push({ x, y, r: rnd(12, 22), life: 1, decay: 0.003 });
+  }
+
+  // ── Ring crack (ice impact) ──────────────────────────
+  function spawnRingCrack(x, y) {
+    // Thin expanding ring, white→blue fade
+    waves.push({ x, y, r: 2, maxR: 55, life: 1, col: '#ffffff', thick: 3 });
+    waves.push({ x, y, r: 4, maxR: 38, life: 1, col: '#aaeeff', thick: 2 });
+  }
+
+  // Trail emitters
   function spawnEmber(x,y) {
-    sparks.push({x,y,vx:rnd(-1,1),vy:rnd(-2,-0.5),life:1,r:rnd(2,5),
-      col:pick(['#ff6600','#ff9900','#ffcc00','#ff3300']),type:'dot',grav:0.05,
-      rot:0,rotV:0});
+    sparks.push({x,y,vx:rnd(-1.5,1.5),vy:rnd(-2.5,-0.5),life:1,r:rnd(2,5),
+      col:pick(['#ff6600','#ff9900','#ffcc00','#ff3300']),type:'dot',grav:0.05+rnd()*0.04,
+      rot:0,rotV:0, decay:rnd(0.025,0.05)});
   }
-
-  // Rainbow trail
   function spawnRainbow(x,y) {
+    // sine-wave trail: offset y by sine of progress
     const hue=(performance.now()*0.3)%360;
-    sparks.push({x,y,vx:rnd(-0.8,0.8),vy:rnd(-0.5,0.2),life:1,r:rnd(3,8),
-      col:`hsl(${hue},100%,70%)`,type:'dot',grav:0.04,rot:0,rotV:0});
+    sparks.push({x,y,vx:rnd(-0.3,0.3),vy:rnd(-0.2,0.1),life:1,r:rnd(4,9),
+      col:`hsl(${hue},100%,70%)`,type:'dot',grav:0.02,rot:0,rotV:0, decay:rnd(0.012,0.022)});
   }
-
-  // Nightmare teleport flash
   function spawnTeleport(x,y) {
     for(let i=0;i<30;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(5,22);
@@ -342,8 +374,6 @@
     waves.push({x,y,r:10,maxR:100,life:1,col:'#bb00ff'});
     addShake(8);
   }
-
-  // Ultimate detonation wave
   function spawnDetonation(x,y) {
     for(let i=0;i<80;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(8,32);
@@ -355,58 +385,572 @@
     addShake(16);
   }
 
-  // ── Confetti ────────────────────────────────────────
-  function spawnConfetti(cx,cy,rIdx,mode='burst') {
-    const r=ROSTER[rIdx]; if(!r) return;
-    const cfg=r.conf, n=mode==='burst'?cfg.burst:~~(cfg.burst*0.55);
-    for(let i=0;i<n;i++){
-      const ang  = mode==='burst'?rnd(-Math.PI,0):rnd(-Math.PI*0.8,-Math.PI*0.2);
-      const mag  = mode==='burst'?rnd(5,22):rnd(4,16);
-      confetti.push({
-        x:cx+rnd(-24,24), y:mode==='burst'?cy+rnd(-8,8):rnd(0,H*0.25),
-        vx:Math.cos(ang)*mag*rnd(0.5,1.5),
-        vy:Math.sin(ang)*mag-(mode==='burst'?rnd(2,10):0),
-        life:1,decay:rnd(0.009,0.019),r:rnd(cfg.sz[0],cfg.sz[1]),
-        col:pick(cfg.cols),sh:pick(cfg.sh),grav:rnd(0.14,0.28),
-        rot:rnd(0,Math.PI*2),rotV:cfg.spin?rnd(-0.2,0.2):0,
-        wob:rnd(0,Math.PI*2),wobS:rnd(0.06,0.14),wobA:rnd(0.5,2.5),
-        pls:rnd(0,Math.PI*2),plsS:rnd(0.12,0.22)
+  // ── Rock chip trail ──────────────────────────────────
+  function spawnChipTrail(x, y, vx, vy) {
+    // chips fly backward relative to motion
+    const ang = Math.atan2(-vy, -vx);
+    for (let i = 0; i < 2; i++) {
+      const spread = rnd(-0.8, 0.8);
+      sparks.push({
+        x, y,
+        vx: Math.cos(ang + spread) * rnd(2, 7),
+        vy: Math.sin(ang + spread) * rnd(2, 7),
+        life: 1, r: rnd(1.5, 4),
+        col: pick(['#9ab','#cde','#678','#aaa']),
+        type: 'chip', grav: 0.3, rot: rnd(0, Math.PI*2), rotV: rnd(-0.3, 0.3),
+        decay: rnd(0.04, 0.07)
       });
     }
   }
-  function updateConfetti() {
-    for(let i=confetti.length-1;i>=0;i--){
-      const c=confetti[i];
-      c.vy+=c.grav; c.wob+=c.wobS; c.pls+=c.plsS;
-      c.x+=c.vx+Math.sin(c.wob)*c.wobA; c.y+=c.vy;
-      c.vx*=0.987; c.rot+=c.rotV; c.life-=c.decay;
-      if(c.y>FLOOR_Y){c.y=FLOOR_Y;c.vy*=-0.22;c.vx*=0.7;c.life-=0.08;}
-      if(c.life<=0) confetti.splice(i,1);
+
+  // Heavy dust trail — falls straight down
+  function spawnHeavyDust(x, y) {
+    dusts.push({ x: x + rnd(-8, 8), y, r: rnd(3, 7), maxR: rnd(12, 20), life: 0.7, falling: true, vy: rnd(1, 3) });
+  }
+
+  // Ice vapor
+  function spawnIceVapor(x, y) {
+    sparks.push({
+      x, y: y + rnd(-4, 4),
+      vx: rnd(-1, 1), vy: rnd(-1.5, -0.2),
+      life: 0.6, r: rnd(4, 9),
+      col: pick(['#d0f8ff','#aaeeff','#ffffff']),
+      type: 'dot', grav: -0.02, rot: 0, rotV: 0,
+      decay: rnd(0.025, 0.05), alpha: 0.5
+    });
+  }
+
+  // Nightmare ghost trail (lagged, semi-transparent)
+  function spawnGhostTrail(x, y, ri) {
+    // Store as a special ghost particle — drawn as faded booha image
+    sparks.push({
+      x, y, vx: 0, vy: 0, life: 0.55, r: B_RADIUS * 1.4,
+      col: '#9900ff', type: 'ghost', grav: 0, rot: 0, rotV: 0,
+      decay: rnd(0.04, 0.07), ri
+    });
+  }
+
+  // ── Death explosions (per-Booha signature) ───────────
+  // Called with pre-explosion tell → then actual burst
+  function triggerDeathExplosion(b) {
+    const x = b.x, y = b.y, power = b.power, ri = b.ri;
+    const isLast = gs.isLastBooha;
+    const scale  = isLast ? 1.6 : 1;  // last booha = amplified
+
+    switch (power) {
+
+      // ────────────────────────────────────────────────
+      // HEAVY: slow chunky debris, building-collapse feel
+      // ────────────────────────────────────────────────
+      case 'heavy': {
+        addShake(10 * scale);
+        // Big chunky debris that falls heavy and bounces
+        for (let i = 0; i < ~~(55 * scale); i++) {
+          const ang = rnd(-Math.PI, 0);  // mostly upward
+          const mag = rnd(3, 15);
+          confetti.push({
+            x: x + rnd(-20, 20), y,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 8),
+            life: 1, decay: rnd(0.004, 0.01), r: rnd(8, 18),
+            col: pick(['#f60','#f90','#fc0','#f40','#5a3010','#888']),
+            sh: pick(['chunk','rect']),
+            grav: rnd(0.5, 0.9),   // heavy gravity
+            bounce: 0.45,          // bounce off floor
+            bounced: false,
+            rot: rnd(0, Math.PI*2), rotV: rnd(-0.08, 0.08),
+            wob: 0, wobS: 0, wobA: 0,
+            pls: 0, plsS: 0,
+            sticky: rnd() < 0.35,   // some pieces stick on landing
+            dustOnLand: true,
+          });
+        }
+        // Crater wave
+        waves.push({ x, y: FLOOR_Y, r: 4, maxR: 90 * scale, life: 1, col: '#cc5500' });
+        spawnDust(x - 30, FLOOR_Y); spawnDust(x, FLOOR_Y); spawnDust(x + 30, FLOOR_Y);
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // ICE: shards hang, then drop all at once
+      // ────────────────────────────────────────────────
+      case 'ice': {
+        addShake(7 * scale);
+        const shardCount = ~~(60 * scale);
+        // Phase 1: shards explode outward but with near-zero gravity — hang
+        for (let i = 0; i < shardCount; i++) {
+          const ang = rnd(-Math.PI, 0);
+          const mag = rnd(4, 14);
+          confetti.push({
+            x: x + rnd(-12, 12), y,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
+            life: 1, decay: rnd(0.002, 0.006), r: rnd(5, 14),
+            col: pick(['#aef','#dff','#8df','#fff','#bcf','#6df']),
+            sh: 'crystal',
+            grav: 0.02,         // almost no gravity — float
+            gravRamp: 0.005,    // gravity slowly increases
+            gravDelay: 60,      // frames before gravity kicks in hard
+            gravDelayT: 0,
+            dropGrav: 0.55,     // final fall gravity
+            rot: rnd(0, Math.PI*2), rotV: rnd(-0.15, 0.15),
+            wob: 0, wobS: 0, wobA: 0, pls: 0, plsS: 0,
+            bounce: 0.2, bounced: false,
+          });
+        }
+        // freeze-frame flash
+        gs.flash = 1.4;
+        spawnRingCrack(x, y);
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // FIRE: embers that keep burning, damage nearby blocks
+      // ────────────────────────────────────────────────
+      case 'fire': {
+        addShake(8 * scale);
+        const emberCount = ~~(80 * scale);
+        for (let i = 0; i < emberCount; i++) {
+          const ang = rnd(-Math.PI, 0);
+          const mag = rnd(5, 18);
+          const dmgEnabled = rnd() < 0.4; // 40% of embers deal damage
+          const dc = {
+            x: x + rnd(-15, 15), y,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(1, 4),
+            life: 1, decay: rnd(0.006, 0.015), r: rnd(3, 9),
+            col: pick(['#f22','#f70','#fa0','#fe0','#f50']),
+            sh: 'flame',
+            grav: rnd(0.04, 0.1),
+            rot: rnd(0, Math.PI*2), rotV: rnd(-0.3, 0.3),
+            wob: rnd(0, Math.PI*2), wobS: rnd(0.08, 0.16), wobA: rnd(1, 3),
+            pls: rnd(0, Math.PI*2), plsS: rnd(0.15, 0.25),
+            bounce: 0.3, bounced: false,
+            damaging: dmgEnabled,   // dealt as damage confetti
+            damageTimer: 0,
+          };
+          if (dmgEnabled) {
+            gs.damageConfetti.push(dc);
+          } else {
+            confetti.push(dc);
+          }
+        }
+        // scorch mark at impact
+        spawnScorch(x, y);
+        waves.push({ x, y, r: 4, maxR: 75 * scale, life: 1, col: '#ff6600' });
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // PRINCESS: hearts float UP, then pop mid-air
+      // ────────────────────────────────────────────────
+      case 'princess': {
+        addShake(4 * scale);
+        const heartCount = ~~(70 * scale);
+        for (let i = 0; i < heartCount; i++) {
+          const spread = rnd(-0.9, 0.9);
+          const floatSpd = rnd(2.5, 8);
+          confetti.push({
+            x: x + rnd(-25, 25), y,
+            vx: spread * rnd(1, 4),
+            vy: -floatSpd,           // float UP
+            life: 1, decay: rnd(0.008, 0.016), r: rnd(5, 12),
+            col: pick(['#f8c','#fae','#c4a','#fde','#fff','#fbd','#ff88aa']),
+            sh: 'heart',
+            grav: -0.04,            // negative gravity — keeps floating up
+            gravRamp: 0,
+            rot: rnd(0, Math.PI*2), rotV: rnd(-0.12, 0.12),
+            wob: rnd(0, Math.PI*2), wobS: rnd(0.05, 0.1), wobA: rnd(1, 2.5),
+            pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+            // Mid-air pop: when life drops below threshold, explode into mini confetti
+            popAt: rnd(0.4, 0.75),
+            popped: false,
+          });
+        }
+        // Soft bouncy sound & gentle wave
+        waves.push({ x, y, r: 4, maxR: 55 * scale, life: 1, col: '#ff88cc' });
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // RAINBOW: shockwave ring first, THEN confetti
+      // ────────────────────────────────────────────────
+      case 'rainbow': {
+        addShake(7 * scale);
+        // Phase 1: big expanding color ring
+        const hues = [0, 30, 60, 120, 200, 270, 320];
+        hues.forEach((h, i) => {
+          setTimeout(() => {
+            waves.push({ x, y, r: 4, maxR: (80 + i * 12) * scale, life: 1, col: `hsl(${h},100%,65%)`, thick: 5 - i * 0.5 });
+          }, i * 18);
+        });
+        // Phase 2: confetti after 120ms, using damage confetti for rainbow type
+        setTimeout(() => {
+          const cnt = ~~(90 * scale);
+          for (let i = 0; i < cnt; i++) {
+            const ang = rnd(-Math.PI, 0);
+            const mag = rnd(6, 16);
+            const hue = rnd(0, 360);
+            const dc = {
+              x: x + rnd(-18, 18), y,
+              vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 6),
+              life: 1, decay: rnd(0.007, 0.016), r: rnd(4, 11),
+              col: `hsl(${hue},100%,65%)`,
+              sh: pick(['sparkle','star','crystal']),
+              grav: rnd(0.12, 0.22),
+              rot: rnd(0, Math.PI*2), rotV: rnd(-0.2, 0.2),
+              wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2.5),
+              pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+              damaging: rnd() < 0.25,
+              damageTimer: 0,
+              bounce: 0.25, bounced: false,
+            };
+            if (dc.damaging) gs.damageConfetti.push(dc);
+            else confetti.push(dc);
+          }
+        }, 130);
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // NIGHTMARE: disappear → flicker → confetti appears BEHIND blocks
+      // ────────────────────────────────────────────────
+      case 'nightmare': {
+        // 1. Mark booha as invisible for flicker phase
+        gs.nightmareFlicker = true;
+        gs.nightmareFlickerTimer = 45; // frames (~0.75s)
+        // 2. After delay, burst from behind blocks
+        setTimeout(() => {
+          gs.nightmareFlicker = false;
+          // flash
+          gs.flash = 1.8;
+          addShake(9 * scale);
+          // confetti erupts from far right (behind blocks)
+          const bx = gs.blocks.filter(bl => !bl.broken).map(bl => bl.x);
+          const spawnX = bx.length ? Math.max(...bx) + 40 : W * 0.75;
+          const spawnY = FLOOR_Y - 80;
+          for (let i = 0; i < ~~(70 * scale); i++) {
+            const ang = rnd(-Math.PI * 0.9, -Math.PI * 0.1); // upward/left arc
+            const mag = rnd(5, 18);
+            confetti.push({
+              x: spawnX + rnd(-20, 20), y: spawnY,
+              vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
+              life: 1, decay: rnd(0.007, 0.016),
+              r: rnd(4, 12),
+              col: pick(['#508','#80c','#b0f','#d4f','#304','#f0f','#fff']),
+              sh: pick(['shard','star','sparkle']),
+              grav: rnd(0.14, 0.28),
+              rot: rnd(0, Math.PI*2), rotV: rnd(-0.2, 0.2),
+              wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2.5),
+              pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+              bounce: 0.25, bounced: false,
+            });
+          }
+          spawnTeleport(spawnX, spawnY);
+          celebPops(300);
+        }, 480);
+        return; // skip immediate confetti for nightmare
+      }
+
+      // ────────────────────────────────────────────────
+      // MONSTER: 3-stage layered explosion
+      // ────────────────────────────────────────────────
+      case 'monster': {
+        const stages = [
+          { delay: 0,   count: 20, magMax: 10, rMax: 8,  shakeV: 5 },
+          { delay: 180, count: 35, magMax: 18, rMax: 13, shakeV: 9 },
+          { delay: 380, count: ~~(60 * scale), magMax: 28, rMax: 20, shakeV: 14 },
+        ];
+        stages.forEach(({ delay, count, magMax, rMax, shakeV }) => {
+          setTimeout(() => {
+            addShake(shakeV);
+            for (let i = 0; i < count; i++) {
+              const ang = rnd(-Math.PI, 0);
+              const mag = rnd(3, magMax);
+              confetti.push({
+                x: x + rnd(-20, 20), y,
+                vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(1, 5),
+                life: 1, decay: rnd(0.006, 0.014), r: rnd(4, rMax),
+                col: pick(['#0c4','#4f8','#cf0','#0f6','#3a0','#8f0','#44ff88']),
+                sh: pick(['chunk','circle','sparkle']),
+                grav: rnd(0.18, 0.32),
+                rot: rnd(0, Math.PI*2), rotV: rnd(-0.2, 0.2),
+                wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2.5),
+                pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+                bounce: 0.35, bounced: false,
+              });
+            }
+            waves.push({ x, y, r: 4, maxR: (50 + count) * scale, life: 1, col: '#44ff88' });
+            synthPop(200 + delay * 0.5, 0.3, 0.12);
+          }, delay);
+        });
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // ULTIMATE: blocks become confetti
+      // ────────────────────────────────────────────────
+      case 'ultimate': {
+        addShake(18 * scale);
+        // Convert all nearby blocks to confetti particles
+        gs.blocks.forEach((block, idx) => {
+          if (block.broken) return;
+          const d = dist(x, y, block.x, block.y);
+          if (d > 320) return;
+          // Each block shatters into particles of its own color
+          const m = MAT[block.material] || MAT.wood;
+          const cnt = ~~(rnd(8, 18));
+          for (let i = 0; i < cnt; i++) {
+            const ang = rnd(0, Math.PI * 2);
+            const mag = rnd(4, 16);
+            const dc = {
+              x: block.x + rnd(-block.w * 0.5, block.w * 0.5),
+              y: block.y + rnd(-block.h * 0.5, block.h * 0.5),
+              vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(1, 6),
+              life: 1, decay: rnd(0.006, 0.014), r: rnd(4, 12),
+              col: pick([m.base, m.mid, m.spark, m.chip]),
+              sh: pick(['chunk','shard','rect','sparkle']),
+              grav: rnd(0.15, 0.3),
+              rot: rnd(0, Math.PI*2), rotV: rnd(-0.25, 0.25),
+              wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2),
+              pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+              damaging: true,
+              damageTimer: 0,
+              bounce: 0.28, bounced: false,
+            };
+            gs.damageConfetti.push(dc);
+          }
+          // Visually destroy block
+          damageBlock(block, block.hp, block.x, block.y, 20, idx, false);
+        });
+        gs.pct = (gs.brokenBlocks / gs.totalBlocks) * 100;
+        // Big confetti burst from center
+        const cnt2 = ~~(130 * scale);
+        for (let i = 0; i < cnt2; i++) {
+          const ang = rnd(-Math.PI, 0);
+          const mag = rnd(8, 26);
+          confetti.push({
+            x: x + rnd(-30, 30), y,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 8),
+            life: 1, decay: rnd(0.005, 0.013), r: rnd(5, 16),
+            col: pick(['#f08','#f80','#ff0','#0fa','#08f','#c0f','#f48','#4fc','#fff']),
+            sh: pick(['star','heart','crystal','sparkle','flame']),
+            grav: rnd(0.14, 0.26),
+            rot: rnd(0, Math.PI*2), rotV: rnd(-0.25, 0.25),
+            wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2.5),
+            pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+            bounce: 0.3, bounced: false,
+          });
+        }
+        spawnDetonation(x, y);
+        celebPops(700);
+        break;
+      }
+
+      // ────────────────────────────────────────────────
+      // NORMAL / ROCK / default
+      // ────────────────────────────────────────────────
+      default: {
+        const r2 = ROSTER[ri];
+        const cfg = r2.conf;
+        const cnt = ~~(cfg.burst * scale);
+        for (let i = 0; i < cnt; i++) {
+          const ang = rnd(-Math.PI, 0);
+          const mag = rnd(4, 16);
+          confetti.push({
+            x: x + rnd(-20, 20), y,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 7),
+            life: 1, decay: rnd(0.008, 0.018), r: rnd(cfg.sz[0], cfg.sz[1]),
+            col: pick(cfg.cols),
+            sh: pick(cfg.sh),
+            grav: rnd(0.14, 0.28),
+            rot: rnd(0, Math.PI*2), rotV: cfg.spin ? rnd(-0.2, 0.2) : 0,
+            wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2.5),
+            pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+            bounce: rnd(0.2, 0.45), bounced: false,
+          });
+        }
+        addShake(6 * scale);
+      }
+    }
+
+    // Standard wave + celebrate pops (unless nightmare or monster, which handle their own timing)
+    if (power !== 'nightmare' && power !== 'monster') {
+      celebPops(power === 'princess' ? 500 : power === 'ultimate' ? 700 : 420);
     }
   }
-  function drawConfetti() {
-    for(const c of confetti){
-      ctx.save(); ctx.globalAlpha=clamp(c.life,0,1); ctx.fillStyle=c.col;
-      ctx.translate(c.x,c.y); ctx.rotate(c.rot);
-      switch(c.sh){
-        case 'circle': ctx.beginPath();ctx.ellipse(0,0,c.r,c.r*0.5,0,0,Math.PI*2);ctx.fill();break;
-        case 'rect':   ctx.fillRect(-c.r*0.55,-c.r*0.35,c.r*1.1,c.r*0.7);break;
-        case 'star': {
-          ctx.beginPath();
-          for(let s=0;s<10;s++){const R=s%2?c.r*0.42:c.r,a=s*Math.PI/5-Math.PI/2;s?ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R):ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R);}
-          ctx.closePath();ctx.fill();break;}
-        case 'sparkle':{
-          const pf=0.38+0.28*Math.sin(c.pls),r2=c.r*pf;
-          ctx.beginPath();ctx.moveTo(0,-c.r);ctx.lineTo(r2*0.25,-r2*0.25);ctx.lineTo(c.r,0);ctx.lineTo(r2*0.25,r2*0.25);ctx.lineTo(0,c.r);ctx.lineTo(-r2*0.25,r2*0.25);ctx.lineTo(-c.r,0);ctx.lineTo(-r2*0.25,-r2*0.25);ctx.closePath();ctx.fill();break;}
-        case 'heart':{
-          ctx.beginPath();ctx.moveTo(0,c.r*0.35);ctx.bezierCurveTo(-c.r,-c.r*0.1,-c.r,-c.r*0.9,0,-c.r*0.5);ctx.bezierCurveTo(c.r,-c.r*0.9,c.r,-c.r*0.1,0,c.r*0.35);ctx.closePath();ctx.fill();break;}
-        case 'shard':{ctx.beginPath();ctx.moveTo(0,-c.r);ctx.lineTo(c.r*0.55,c.r*0.5);ctx.lineTo(-c.r*0.55,c.r*0.35);ctx.closePath();ctx.fill();break;}
-        case 'crystal':{ctx.beginPath();ctx.moveTo(0,-c.r);ctx.lineTo(c.r*0.4,0);ctx.lineTo(0,c.r);ctx.lineTo(-c.r*0.4,0);ctx.closePath();ctx.fill();break;}
-        case 'chunk':{ctx.beginPath();ctx.moveTo(-c.r*0.5,-c.r*0.6);ctx.lineTo(c.r*0.6,-c.r*0.4);ctx.lineTo(c.r*0.4,c.r*0.5);ctx.lineTo(-c.r*0.6,c.r*0.3);ctx.closePath();ctx.fill();break;}
-        case 'flame':{ctx.beginPath();ctx.moveTo(0,c.r*0.5);ctx.quadraticCurveTo(c.r*0.8,0,c.r*0.3,-c.r*0.6);ctx.quadraticCurveTo(0,-c.r,-c.r*0.3,-c.r*0.6);ctx.quadraticCurveTo(-c.r*0.8,0,0,c.r*0.5);ctx.closePath();ctx.fill();break;}
-        default: ctx.beginPath();ctx.arc(0,0,c.r,0,Math.PI*2);ctx.fill();
+
+  // ── Pre-explosion tell system ────────────────────────
+  // Booha squash → pause → explode
+  // State: null | { phase:'squash'|'pause'|'done', t:0, maxT:0 }
+  function initTell(b) {
+    b.tell = { phase: 'squash', t: 0, maxT: 8 };
+    b.tellScaleX = 1;
+    b.tellScaleY = 1;
+    b.tellGlow = 0;
+    // micro-inhale shake
+    addShake(2.5);
+  }
+  function updateTell(b) {
+    if (!b.tell) return false;
+    const tell = b.tell;
+    tell.t++;
+    if (tell.phase === 'squash') {
+      // Scale up slightly then squash
+      const p = tell.t / tell.maxT;
+      b.tellScaleX = 1 + Math.sin(p * Math.PI) * 0.28;
+      b.tellScaleY = 1 - Math.sin(p * Math.PI) * 0.18;
+      b.tellGlow = Math.sin(p * Math.PI) * 0.7;
+      if (tell.t >= tell.maxT) {
+        tell.phase = 'pause'; tell.t = 0; tell.maxT = 12; // ~0.2s pause
+        addShake(3.5);
       }
+    } else if (tell.phase === 'pause') {
+      // Hold: white flash grows
+      b.tellScaleX = 1.15;
+      b.tellScaleY = 0.88;
+      b.tellGlow = 0.9 + rnd() * 0.1;
+      gs.flash = Math.max(gs.flash, 0.4);
+      if (tell.t >= tell.maxT) {
+        tell.phase = 'done';
+        b.tell = null;
+        b.tellScaleX = 1; b.tellScaleY = 1; b.tellGlow = 0;
+        return true; // fire the explosion now
+      }
+    }
+    return false;
+  }
+
+  // ── Confetti update (extended with per-type physics) ─
+  function updateConfetti() {
+    const now = performance.now();
+
+    // Main confetti
+    for (let i = confetti.length - 1; i >= 0; i--) {
+      const c = confetti[i];
+
+      // Ice: gravity ramp-up (hang effect)
+      if (c.gravDelay !== undefined) {
+        c.gravDelayT = (c.gravDelayT || 0) + 1;
+        if (c.gravDelayT > (c.gravDelay || 60)) {
+          c.grav = Math.min(c.dropGrav || 0.55, c.grav + (c.gravRamp || 0.008));
+        }
+      }
+
+      c.vy += c.grav;
+      c.wob += (c.wobS || 0); c.pls += (c.plsS || 0);
+      c.x += c.vx + Math.sin(c.wob) * (c.wobA || 0);
+      c.y += c.vy;
+      c.vx *= 0.987;
+      c.rot += (c.rotV || 0);
+
+      // Floor collision with per-piece bounce variation
+      if (c.y + c.r > FLOOR_Y) {
+        if (!c.bounced) {
+          c.bounced = true;
+          c.vy *= -(c.bounce || 0.25);
+          c.vx *= 0.72;
+          c.y = FLOOR_Y - c.r;
+          if (c.dustOnLand) spawnDust(c.x, FLOOR_Y);
+          if (c.sticky) { c.vx = 0; c.vy = 0; c.grav = 0; } // stick on floor
+        } else {
+          c.vy *= -0.18;
+          c.vx *= 0.8;
+          c.y = FLOOR_Y - c.r;
+          c.life -= 0.04;
+        }
+      }
+
+      // Princess hearts: pop mid-air
+      if (c.sh === 'heart' && !c.popped && c.life < (c.popAt || 0.55)) {
+        c.popped = true;
+        // Mini confetti burst at this position
+        for (let j = 0; j < 6; j++) {
+          const ang = rnd(0, Math.PI * 2), mag = rnd(2, 7);
+          confetti.push({
+            x: c.x, y: c.y,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
+            life: 0.7, decay: rnd(0.025, 0.045), r: rnd(2, 5),
+            col: pick(['#f8c','#fae','#fbd','#fff','#ff88aa']),
+            sh: 'sparkle', grav: 0.08,
+            rot: rnd(0, Math.PI*2), rotV: rnd(-0.3, 0.3),
+            wob: 0, wobS: 0, wobA: 0, pls: 0, plsS: 0,
+            bounce: 0.3, bounced: false,
+          });
+        }
+        synthPop(600 + rnd() * 200, 0.12, 0.06);
+      }
+
+      c.life -= (c.decay || 0.014);
+      if (c.y > H + 200) c.life = 0;
+      if (c.life <= 0) confetti.splice(i, 1);
+    }
+
+    // Damage confetti (fire/rainbow/ultimate) — check vs blocks
+    for (let i = gs.damageConfetti.length - 1; i >= 0; i--) {
+      const c = gs.damageConfetti[i];
+
+      if (c.gravDelay !== undefined) {
+        c.gravDelayT = (c.gravDelayT || 0) + 1;
+        if (c.gravDelayT > (c.gravDelay || 60)) {
+          c.grav = Math.min(c.dropGrav || 0.55, c.grav + (c.gravRamp || 0.008));
+        }
+      }
+
+      c.vy += c.grav; c.wob += (c.wobS || 0); c.pls += (c.plsS || 0);
+      c.x += c.vx + Math.sin(c.wob) * (c.wobA || 0); c.y += c.vy;
+      c.vx *= 0.987; c.rot += (c.rotV || 0);
+
+      if (c.y + c.r > FLOOR_Y) {
+        if (!c.bounced) {
+          c.bounced = true; c.vy *= -(c.bounce || 0.25); c.vx *= 0.72; c.y = FLOOR_Y - c.r;
+        } else { c.vy *= -0.15; c.y = FLOOR_Y - c.r; c.life -= 0.05; }
+      }
+
+      // Damage check: every 12 frames
+      c.damageTimer = (c.damageTimer || 0) + 1;
+      if (c.damageTimer % 12 === 0) {
+        gs.blocks.forEach((block, idx) => {
+          if (block.broken) return;
+          if (dist(c.x, c.y, block.x, block.y) < block.w * 0.55 + c.r) {
+            damageBlock(block, 1, c.x, c.y, 5, idx, false);
+          }
+        });
+      }
+
+      c.life -= (c.decay || 0.014);
+      if (c.life <= 0) gs.damageConfetti.splice(i, 1);
+    }
+  }
+
+  function drawConfetti() {
+    // Draw both pools
+    const all = [...confetti, ...gs.damageConfetti];
+    for (const c of all) {
+      ctx.save();
+      ctx.globalAlpha = clamp(c.life, 0, 1) * (c.alpha || 1);
+      ctx.fillStyle = c.col;
+      ctx.translate(c.x, c.y); ctx.rotate(c.rot);
+      drawConfettiShape(c);
       ctx.restore();
+    }
+  }
+
+  function drawConfettiShape(c) {
+    switch(c.sh){
+      case 'circle': ctx.beginPath();ctx.ellipse(0,0,c.r,c.r*0.5,0,0,Math.PI*2);ctx.fill();break;
+      case 'rect':   ctx.fillRect(-c.r*0.55,-c.r*0.35,c.r*1.1,c.r*0.7);break;
+      case 'star': {
+        ctx.beginPath();
+        for(let s=0;s<10;s++){const R=s%2?c.r*0.42:c.r,a=s*Math.PI/5-Math.PI/2;s?ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R):ctx.moveTo(Math.cos(a)*R,Math.sin(a)*R);}
+        ctx.closePath();ctx.fill();break;}
+      case 'sparkle':{
+        const pf=0.38+0.28*Math.sin(c.pls||0),r2=c.r*pf;
+        ctx.beginPath();ctx.moveTo(0,-c.r);ctx.lineTo(r2*0.25,-r2*0.25);ctx.lineTo(c.r,0);ctx.lineTo(r2*0.25,r2*0.25);ctx.lineTo(0,c.r);ctx.lineTo(-r2*0.25,r2*0.25);ctx.lineTo(-c.r,0);ctx.lineTo(-r2*0.25,-r2*0.25);ctx.closePath();ctx.fill();break;}
+      case 'heart':{
+        ctx.beginPath();ctx.moveTo(0,c.r*0.35);ctx.bezierCurveTo(-c.r,-c.r*0.1,-c.r,-c.r*0.9,0,-c.r*0.5);ctx.bezierCurveTo(c.r,-c.r*0.9,c.r,-c.r*0.1,0,c.r*0.35);ctx.closePath();ctx.fill();break;}
+      case 'shard':{ctx.beginPath();ctx.moveTo(0,-c.r);ctx.lineTo(c.r*0.55,c.r*0.5);ctx.lineTo(-c.r*0.55,c.r*0.35);ctx.closePath();ctx.fill();break;}
+      case 'crystal':{ctx.beginPath();ctx.moveTo(0,-c.r);ctx.lineTo(c.r*0.4,0);ctx.lineTo(0,c.r);ctx.lineTo(-c.r*0.4,0);ctx.closePath();ctx.fill();break;}
+      case 'chunk':{ctx.beginPath();ctx.moveTo(-c.r*0.5,-c.r*0.6);ctx.lineTo(c.r*0.6,-c.r*0.4);ctx.lineTo(c.r*0.4,c.r*0.5);ctx.lineTo(-c.r*0.6,c.r*0.3);ctx.closePath();ctx.fill();break;}
+      case 'flame':{ctx.beginPath();ctx.moveTo(0,c.r*0.5);ctx.quadraticCurveTo(c.r*0.8,0,c.r*0.3,-c.r*0.6);ctx.quadraticCurveTo(0,-c.r,-c.r*0.3,-c.r*0.6);ctx.quadraticCurveTo(-c.r*0.8,0,0,c.r*0.5);ctx.closePath();ctx.fill();break;}
+      default: ctx.beginPath();ctx.arc(0,0,c.r,0,Math.PI*2);ctx.fill();
     }
   }
 
@@ -444,12 +988,14 @@
     gs.dragging=false;gs.pullPlayed=false;gs.bestShot=0;gs.pct=0;gs.brokenBlocks=0;
     gs.debTimer=0;gs.shotLock=false;gs.flash=0;
     sparks.length=0;waves.length=0;dusts.length=0;confetti.length=0;powers.length=0;
+    scorchMarks.length=0;
     CRACKS.clear();shake.v=0;
     gs.fireTrail=[];gs.minis=[];gs.frozen=new Map();gs.bounces=0;
-    // Reset all booha stocks to full for the new round
+    gs.isLastBooha=false;gs.timeScale=1;
+    gs.nightmareFlicker=false;gs.nightmareFlickerTimer=0;
+    gs.damageConfetti=[];
     bst.stocks=ROSTER.map(b=>b.stock);
     bst.sel=0;
-    // ghostsLeft = total shots available = sum of all stocks
     gs.ghostsLeft=bst.totalShots();
   }
 
@@ -489,9 +1035,16 @@
       radius, baseRadius:radius,
       settledF:0, confettiFired:false, damageThisShot:0,
       ri, power:r.power,
-      piercedOnce:false,   // rock: has it pierced once?
-      spawnedMinis:false,  // princess: minis spawned?
+      piercedOnce:false,
+      spawnedMinis:false,
       trailTimer:0,
+      // Tell state
+      tell: null, tellScaleX: 1, tellScaleY: 1, tellGlow: 0,
+      // nightmare
+      _teleported: false,
+      // Impact compression (for princess/ice)
+      impactCompress: 0,
+      impactCompressDir: 0,
     };
   }
   function cloneBlock(def,idx){
@@ -499,20 +1052,24 @@
     CRACKS.delete(idx);
     return{x:def.x,y,w:def.w,h:def.h,material:def.material||'wood',
       hp:def.hp||1,maxHp:def.hp||1,broken:false,shake:0,vy:0,fallen:false,hitFlash:0,
-      frozen:false,burning:false,burnTimer:0};
+      frozen:false,burning:false,burnTimer:0,
+      // Ice ring crack state
+      ringCrack:false,
+      // Compress state (heavy impact)
+      compressY:0,
+    };
   }
 
   // ── Power helpers ────────────────────────────────────
   function applyFireBurn(block, idx) {
     if (block.broken || block.burning) return;
     block.burning = true;
-    block.burnTimer = 120; // 2s at 60fps
+    block.burnTimer = 120;
   }
   function updateBurning() {
     gs.blocks.forEach((block, idx) => {
       if (!block.burning || block.broken) return;
       block.burnTimer--;
-      // Every 40 frames, deal 1 HP
       if (block.burnTimer % 40 === 0 && block.hp > 0) {
         damageBlock(block, 1, block.x, block.y, 8, idx, false);
         spawnEmber(block.x + rnd(-block.w/2, block.w/2), block.y - block.h/2);
@@ -527,7 +1084,6 @@
         gs.frozen.delete(idx);
         if (block && !block.broken) {
           block.frozen = false;
-          // Shatter: deal max damage
           damageBlock(block, block.hp, block.x, block.y, 18, idx, true);
           spawnIce(block.x, block.y, block.w, block.h);
         }
@@ -551,6 +1107,16 @@
       if (gs.booha) { gs.booha.damageThisShot = gs.pct; gs.bestShot = Math.max(gs.bestShot, gs.pct); }
       if (mat === 'glass') { spawnGlass(block.x, block.y, block.w, block.h); spawnWave(block.x, block.y, '#b7ecff', 70); }
       else { spawnSparks(block.x, block.y, mat, spd + 4, 20); spawnWave(block.x, block.y, m.spark, 60); }
+
+      // Overkill chain: if many blocks broken recently, extra particles from neighboring blocks
+      if (gs.pct > 50 && rnd() < 0.35) {
+        const nearby = gs.blocks.filter(bl => !bl.broken && dist(bl.x, bl.y, block.x, block.y) < 120);
+        nearby.slice(0, 2).forEach(nb => {
+          spawnSparks(nb.x, nb.y, nb.material, spd * 0.6, 8);
+          nb.hitFlash = 0.5;
+        });
+      }
+
       addShake(Math.min(10, spd * 0.6 + 4));
       if (doSFX) sndBreak();
       gs.debTimer = 18;
@@ -560,6 +1126,7 @@
   // ── Block collision ─────────────────────────────────
   function blockCollide(block, idx) {
     const b = gs.booha; if (!b || !b.launched || block.broken) return;
+    if (b.tell) return; // during tell, no collision
     const cx = clamp(b.x, block.x - block.w/2, block.x + block.w/2);
     const cy = clamp(b.y, block.y - block.h/2, block.y + block.h/2);
     const dx = b.x - cx, dy = b.y - cy, dsq = dx*dx + dy*dy;
@@ -568,43 +1135,62 @@
     if (spd < MIN_IMPACT) return;
     sndHit(block.material, spd);
 
-    // ── Apply power effects on hit ──
     const power = b.power;
 
-    // Ice power: freeze the block instead of direct damage
+    // ── Impact style differences ─────────────────────
+    // Ice: ring crack first
+    if (power === 'ice') {
+      spawnRingCrack(cx, cy);
+      block.ringCrack = true;
+    }
+    // Fire: scorch spot
+    if (power === 'fire') {
+      spawnScorch(cx, cy);
+    }
+    // Heavy: block compress before break
+    if (power === 'heavy') {
+      block.compressY = 6; // px squash, will spring back
+    }
+    // Princess: exaggerated rebound visual (stored in booha)
+    if (power === 'princess') {
+      b.impactCompress = 1;
+      b.impactCompressDir = Math.atan2(dy, dx);
+    }
+    // Nightmare: impact sound is delayed
+    if (power === 'nightmare') {
+      setTimeout(() => sndHit(block.material, spd), 160);
+    }
+
+    // Ice freeze
     if (power === 'ice' && !block.frozen) {
       block.frozen = true;
-      gs.frozen.set(idx, 90); // freeze for 1.5s
+      gs.frozen.set(idx, 90);
       spawnWave(cx, cy, '#aaeeff', 50);
       spawnSparks(cx, cy, 'ice', spd, 10);
       addShake(4);
     }
-
-    // Rainbow power: convert block material to glass
+    // Rainbow: convert to glass
     if (power === 'rainbow' && block.material !== 'glass') {
       block.material = 'glass';
       block.hp = 1; block.maxHp = 1;
       spawnWave(cx, cy, '#ff88ff', 55);
     }
-
-    // Nightmare: teleport behind — already handled in updateBooha
-    // Princess: spawn minis on first hit
+    // Princess minis
     if (power === 'princess' && !b.spawnedMinis) {
       b.spawnedMinis = true;
       for (let m = 0; m < 3; m++) {
-        // Mini boohas launch from impact point in spread
         const ang = -Math.PI * 0.5 + rnd(-0.6, 0.6);
-        const mini = { isMini: true, x: cx, y: cy, vx: Math.cos(ang) * rnd(8, 14), vy: Math.sin(ang) * rnd(8, 14) - rnd(3, 6), radius: B_RADIUS * 0.45, launched: true, life: 1, ri: b.ri };
+        const mini = { isMini:true, x:cx, y:cy, vx:Math.cos(ang)*rnd(8,14), vy:Math.sin(ang)*rnd(8,14)-rnd(3,6), radius:B_RADIUS*0.45, launched:true, life:1, ri:b.ri };
         gs.minis.push(mini);
       }
     }
 
-    // Standard damage calc
+    // Damage
     let dmg = 0;
     if (power === 'heavy') {
-      dmg = 2; // always 2 damage
+      dmg = 2;
     } else if (power === 'ice' || power === 'rainbow') {
-      dmg = 0; // ice/rainbow use special effects above
+      dmg = 0;
     } else {
       dmg = block.material === 'stone' ? (spd > 11 ? 1 : 0)
           : block.material === 'glass' ? 1
@@ -613,26 +1199,26 @@
     }
     if (dmg > 0) damageBlock(block, dmg, cx, cy, spd, idx);
 
-    // Fire: burn nearby blocks
+    // Fire: burn nearby
     if (power === 'fire') {
       gs.blocks.forEach((blk, i) => {
         if (!blk.broken && dist(blk.x, blk.y, block.x, block.y) < 120) applyFireBurn(blk, i);
       });
     }
 
-    // Rock: pass through once (no bounce)
+    // Rock: pierce once
     if (power === 'rock' && !b.piercedOnce) {
       b.piercedOnce = true;
-      return; // skip reflection
+      return;
     }
 
-    // Monster: grow on each bounce
+    // Monster: grow
     if (power === 'monster') {
       gs.bounces++;
       b.radius = Math.min(b.baseRadius * (1 + gs.bounces * 0.22), B_RADIUS * 2.8);
     }
 
-    // Reflect
+    // Reflect (rock with pierce: no reflect first time)
     const nx = dx===0&&dy===0?1:dx/Math.sqrt(dsq||1), ny = dx===0&&dy===0?0:dy/Math.sqrt(dsq||1);
     const dot = b.vx*nx + b.vy*ny;
     b.vx = (b.vx - 2*dot*nx) * BOUNCE;
@@ -640,7 +1226,6 @@
     if (Math.abs(dx) > Math.abs(dy)) b.x = cx + nx*(b.radius+1); else b.y = cy + ny*(b.radius+1);
   }
 
-  // Mini-booha collision (princess power)
   function miniCollide(mini) {
     for (let i = 0; i < gs.blocks.length; i++) {
       const block = gs.blocks[i]; if (block.broken) continue;
@@ -669,14 +1254,24 @@
         }
         block.vy*=0.985;
       }
+      // Spring back compress
+      if (block.compressY > 0) {
+        block.compressY *= 0.7;
+        if (block.compressY < 0.5) block.compressY = 0;
+      }
       block.shake*=0.84;block.hitFlash*=0.88;
     }
     if(gs.debTimer>0){if(gs.debTimer===18)sndRub();gs.debTimer--;}
     updateBurning();
     updateFrozen();
+    // Update scorch marks
+    for (let i = scorchMarks.length - 1; i >= 0; i--) {
+      scorchMarks[i].life -= scorchMarks[i].decay;
+      if (scorchMarks[i].life <= 0) scorchMarks.splice(i, 1);
+    }
   }
 
-  // ── Update: minis (princess) ─────────────────────────
+  // ── Update: minis ────────────────────────────────────
   function updateMinis(){
     for(let i=gs.minis.length-1;i>=0;i--){
       const m=gs.minis[i];
@@ -689,11 +1284,29 @@
     }
   }
 
+  // ── Update: nightmare flicker ────────────────────────
+  function updateNightmareFlicker() {
+    if (!gs.nightmareFlicker) return;
+    gs.nightmareFlickerTimer--;
+    if (gs.nightmareFlickerTimer <= 0) gs.nightmareFlicker = false;
+  }
+
   // ── Update: booha ────────────────────────────────────
   function updateBooha(){
     const b=gs.booha; if(!b||!b.launched) return;
 
-    // Nightmare: on launch, teleport to right side of first un-broken block
+    // Handle tell animation
+    if (b.tell) {
+      const fire = updateTell(b);
+      if (fire) {
+        b.confettiFired = true;
+        triggerDeathExplosion(b);
+        setTimeout(finishShot, NEXT_MS);
+      }
+      return; // freeze physics during tell
+    }
+
+    // Nightmare teleport
     if(b.power==='nightmare'&&!b._teleported){
       b._teleported=true;
       const target=gs.blocks.find(bl=>!bl.broken);
@@ -707,26 +1320,74 @@
       }
     }
 
-    b.vy+=GRAVITY; b.vx*=AIR; b.vy*=AIR; b.x+=b.vx; b.y+=b.vy;
+    // Apply time scale for last-booha slow motion
+    const ts = gs.timeScale;
+    b.vy += GRAVITY * ts; b.vx *= Math.pow(AIR, ts); b.vy *= Math.pow(AIR, ts);
+    b.x += b.vx * ts; b.y += b.vy * ts;
 
-    // Trail effects
+    // Trail effects — per-Booha personalities
     b.trailTimer++;
-    if(b.power==='fire'&&b.trailTimer%3===0)  spawnEmber(b.x, b.y);
-    if(b.power==='rainbow'&&b.trailTimer%2===0) spawnRainbow(b.x, b.y);
+    const tt = b.trailTimer;
+    switch (b.power) {
+      case 'heavy':
+        // Dust trail that falls straight down
+        if (tt % 4 === 0) spawnHeavyDust(b.x, b.y);
+        break;
+      case 'rock':
+        // Chip fragments fly backward
+        if (tt % 3 === 0) spawnChipTrail(b.x, b.y, b.vx, b.vy);
+        break;
+      case 'ice':
+        // Cold vapor, short-lived
+        if (tt % 3 === 0) spawnIceVapor(b.x, b.y);
+        break;
+      case 'fire':
+        // Erratic embers — not consistent spacing
+        if (rnd() < 0.45) spawnEmber(b.x, b.y);
+        break;
+      case 'rainbow':
+        // Smooth sine-wave trail
+        if (tt % 2 === 0) {
+          const sineOffset = Math.sin(tt * 0.18) * 12;
+          spawnRainbow(b.x, b.y + sineOffset);
+        }
+        break;
+      case 'nightmare':
+        // Lagged ghost trail
+        if (tt % 5 === 0) spawnGhostTrail(b.x - b.vx * 3, b.y - b.vy * 3, b.ri);
+        break;
+      case 'monster':
+        // Trail gets thicker each bounce
+        if (tt % 3 === 0) {
+          const thk = 1 + gs.bounces * 0.5;
+          for (let i = 0; i < thk; i++) spawnEmber(b.x + rnd(-4,4), b.y + rnd(-4,4));
+        }
+        break;
+      case 'princess':
+        // Sparkle trail
+        if (tt % 4 === 0) {
+          sparks.push({ x:b.x+rnd(-8,8), y:b.y+rnd(-8,8), vx:rnd(-1,1), vy:rnd(-1,0.5), life:0.8, r:rnd(2,5), col:pick(['#f8c','#fae','#fff']), type:'dot', grav:0.02, rot:0, rotV:0, decay:rnd(0.025,0.045) });
+        }
+        break;
+    }
+
+    // Impact compress spring (princess bouncy feel)
+    if (b.impactCompress > 0) {
+      b.impactCompress *= 0.8;
+      if (b.impactCompress < 0.05) b.impactCompress = 0;
+    }
 
     // Wall bounces
     if(b.x-b.radius<0){b.x=b.radius;b.vx*=-BOUNCE;}
     if(b.x+b.radius>W){b.x=W-b.radius;b.vx*=-BOUNCE;}
     if(b.y+b.radius>=FLOOR_Y){
-      const s=Math.abs(b.vy);
-      if(s>8){sndGnd(s);spawnDust(b.x,FLOOR_Y);addShake(Math.min(4,s*0.2));}
+      const s=Math.abs(b.vy)*ts;
+      if(s>8){sndGnd(s);spawnDust(b.x,FLOOR_Y);addShake(Math.min(4,s*0.2)*(gs.isLastBooha?1.8:1));}
       b.y=FLOOR_Y-b.radius; b.vy*=-0.38; b.vx*=0.86;
-      // Heavy: crater sparks on floor hit
       if(b.power==='heavy'&&s>10){
         for(let i=0;i<20;i++) spawnSparks(b.x,FLOOR_Y,'stone',s,1);
-        addShake(8);
+        addShake(8*(gs.isLastBooha?1.8:1));
       }
-      // Monster: grows on floor bounce too
       if(b.power==='monster'){
         gs.bounces++;
         b.radius=Math.min(b.baseRadius*(1+gs.bounces*0.22),B_RADIUS*2.8);
@@ -740,11 +1401,20 @@
     if(spd<REST_THR&&onFloor){
       b.vx*=0.985;b.vy*=0.985;b.settledF++;
       if(!b.confettiFired&&b.settledF>=SETTLE_NEED){
-        b.confettiFired=true;
-        // Ultimate: detonate everything in radius 280
-        if(b.power==='ultimate'){
+        // ── PRE-EXPLOSION TELL ──────────────────────────
+        // Nightmare has its own special handling, skip the tell
+        if (!b.tell && b.power !== 'nightmare') {
+          initTell(b);
+        } else if (b.power === 'nightmare' && !b.confettiFired) {
+          b.confettiFired = true;
+          triggerDeathExplosion(b);
+          setTimeout(finishShot, NEXT_MS + 600); // nightmare needs extra time
+        }
+        // Ultimate: also trigger detonation early
+        if(b.power==='ultimate'&&!b.confettiFired){
+          b.confettiFired=true;
+          initTell(b); // tell still fires first
           spawnDetonation(b.x, b.y);
-          celebPops(600);
           gs.blocks.forEach((block,i)=>{
             if(!block.broken&&dist(b.x,b.y,block.x,block.y)<280){
               damageBlock(block,block.hp,block.x,block.y,20,i,false);
@@ -752,11 +1422,13 @@
           });
           gs.pct=(gs.brokenBlocks/gs.totalBlocks)*100;
         }
-        celebPops(b.power==='princess'?500:b.power==='ultimate'?700:420);
-        spawnConfetti(b.x, b.y-b.radius*0.5, b.ri, 'burst');
-        setTimeout(finishShot, NEXT_MS);
       }
     } else { b.settledF=0; }
+
+    // Last booha: ramp up slow-motion when released
+    if (gs.isLastBooha && b.launched && gs.timeScale > 0.55) {
+      gs.timeScale = Math.max(0.55, gs.timeScale - 0.008);
+    }
 
     // OOB
     if((b.y>H+200||b.x<-200||b.x>W+200)&&!gs.shotLock) finishShot();
@@ -766,9 +1438,8 @@
   function finishShot(){
     if(gs.shotLock) return;
     gs.shotLock=true;
+    gs.timeScale=1; // reset slow-mo
 
-    // Count how many shots are truly left AFTER this one
-    // ghostsLeft was decremented at launch; just check remaining stocks
     const shotsLeft = bst.stocks.reduce((a,v)=>a+v, 0);
     gs.ghostsLeft = shotsLeft;
 
@@ -776,26 +1447,28 @@
     const target=(LEVELS[gs.round]?.targetPercent)||100;
 
     if(gs.pct>=target){
-      // WIN
       sndWin();
       spawnConfetti(W/2, H*0.3, bst.sel, 'celebrate');
       celebPops(500);
       showCard(P.WIN, `ROUND ${gs.roundN} CLEAR!`, 'Smashed it! 🎉', '#ffdd44');
       setTimeout(advanceRound, CARD_MS);
     } else if(shotsLeft<=0){
-      // FAIL — no shots left
       sndFail();
       showCard(P.FAIL, 'ROUND OVER', `${Math.round(gs.pct)}% destruction — so close!`, '#ff6666');
       setTimeout(()=>{loadRound(gs.round);startRound();}, CARD_MS+700);
     } else {
-      // More shots remain
       gs.shotLock=false;
       advanceSelector();
+      // Detect if next shot is the last one
+      const remaining = bst.stocks.reduce((a, v) => a + v, 0);
+      gs.isLastBooha = remaining <= 1;
+      gs.timeScale = 1;
       gs.booha=makeBooha();
       gs.bounces=0;
       gs.fireTrail=[];
       gs.minis=[];
       gs.frozen=new Map();
+      gs.damageConfetti=[];
     }
   }
 
@@ -811,7 +1484,6 @@
     const r=canvas.getBoundingClientRect();
     const cx=evt.touches?evt.touches[0].clientX:evt.clientX;
     const cy=evt.touches?evt.touches[0].clientY:evt.clientY;
-    // Canvas is letterboxed — account for offset
     const scaleX=W/r.width, scaleY=H/r.height;
     return{x:(cx-r.left)*scaleX, y:(cy-r.top)*scaleY};
   }
@@ -827,11 +1499,8 @@
   function htAction(px,py){ const bx=W/2-130,by=H*0.62; return px>=bx&&px<=bx+260&&py>=by&&py<=by+58; }
 
   function onDown(evt){
-    // Resume AudioContext on user gesture (required by browser autoplay policy)
     getAC();
-
     const p=worldPt(evt);
-
     if(gs.phase===P.TITLE){ if(htStart(p.x,p.y)){loadRound(0);startRound();} evt.preventDefault();return; }
     if(gs.phase===P.WIN||gs.phase===P.FAIL){
       if(htAction(p.x,p.y)){
@@ -839,14 +1508,12 @@
       }
       evt.preventDefault();return;
     }
-
     const slot=selHit(p.x,p.y);
     if(slot!==-1&&bst.stocks[slot]>0&&!gs.shotLock){
       bst.sel=slot;
       if(gs.booha&&!gs.booha.launched) gs.booha=makeBooha();
       evt.preventDefault();evt.stopPropagation();return;
     }
-
     if(!gs.booha||gs.booha.launched||gs.shotLock)return;
     if(!gs.running) startRound();
     if(dist(p.x,p.y,gs.booha.x,gs.booha.y)>gs.booha.radius+24)return;
@@ -869,10 +1536,17 @@
     if(!gs.booha||gs.booha.launched||gs.shotLock)return;
     const dx=SLING_X-gs.booha.x,dy=SLING_Y-gs.booha.y,mag=Math.hypot(dx,dy);
     if(mag<12){gs.booha.x=SLING_X;gs.booha.y=SLING_Y;return;}
-    // Consume stock
     bst.stocks[bst.sel]=Math.max(0,bst.stocks[bst.sel]-1);
     gs.booha.vx=dx*0.19; gs.booha.vy=dy*0.19;
     gs.booha.launched=true; gs.booha.damageThisShot=0;
+    // Detect last booha on launch
+    const remaining = bst.stocks.reduce((a, v) => a + v, 0);
+    gs.isLastBooha = remaining === 0;
+    if (gs.isLastBooha) {
+      // Last shot: heavy shake, amplified effects
+      addShake(5);
+      gs.timeScale = 0.8; // start slightly slowed
+    }
     sndLaunch();
   }
 
@@ -882,15 +1556,20 @@
       const p=sparks[i];
       p.vy+=p.grav;p.x+=p.vx;p.y+=p.vy;p.vx*=0.97;
       if(p.rot!==undefined)p.rot+=p.rotV;
-      p.life-=0.025+0.005*rnd();
+      p.life-=(p.decay||0.025)+0.005*rnd();
       if(p.y>FLOOR_Y-p.r&&(p.type==='chip'||p.type==='shard')){p.y=FLOOR_Y-p.r;p.vy*=-0.38;p.vx*=0.78;if(Math.abs(p.vy)>5)spawnDust(p.x,FLOOR_Y);}
       if(p.life<=0)sparks.splice(i,1);
     }
     for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.r+=(w.maxR-w.r)*0.18;w.life-=0.06;if(w.life<=0)waves.splice(i,1);}
-    for(let i=dusts.length-1;i>=0;i--){const d=dusts[i];d.r+=(d.maxR-d.r)*0.12;d.life-=0.05;if(d.life<=0)dusts.splice(i,1);}
+    for(let i=dusts.length-1;i>=0;i--){
+      const d=dusts[i];
+      if (d.falling) { d.y = (d.y||0) + (d.vy||2); } // heavy dust falls
+      d.r+=(d.maxR-d.r)*0.12;d.life-=0.05;if(d.life<=0)dusts.splice(i,1);
+    }
     shake.v*=shake.decay;
     updateConfetti();
     updateMinis();
+    updateNightmareFlicker();
   }
 
   // ── Draw helpers ─────────────────────────────────────
@@ -910,6 +1589,26 @@
       ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
     }
     ctx.fillStyle='rgba(0,0,0,0.18)';ctx.fillRect(0,H-80,W,80);
+    // Nightmare flicker: screen flashes
+    if (gs.nightmareFlicker) {
+      const flk = (gs.nightmareFlickerTimer % 8 < 4) ? 0.18 : 0;
+      if (flk > 0) { ctx.fillStyle=`rgba(80,0,128,${flk})`; ctx.fillRect(0,0,W,H); }
+    }
+  }
+
+  // ── Draw: Scorch marks ───────────────────────────────
+  function drawScorchMarks() {
+    for (const s of scorchMarks) {
+      ctx.save();
+      ctx.globalAlpha = s.life * 0.55;
+      const sg = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+      sg.addColorStop(0, 'rgba(0,0,0,0.8)');
+      sg.addColorStop(0.5, 'rgba(80,20,0,0.4)');
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sg;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
   }
 
   // ── Draw: Slingshot ───────────────────────────────────
@@ -957,27 +1656,73 @@
   // ── Draw: Booha ───────────────────────────────────────
   function drawBooha(){
     const b=gs.booha; if(!b) return;
-    // Monster: pulsing glow
+    // Nightmare: invisible during flicker phase
+    if (b.power === 'nightmare' && gs.nightmareFlicker) return;
+
+    // Auras
     if(b.power==='monster'&&gs.bounces>0){
       ctx.save();ctx.globalAlpha=0.3;ctx.shadowColor='#44ff44';ctx.shadowBlur=30;
       ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fillStyle='#22aa22';ctx.fill();
       ctx.restore();
     }
-    // Ice: frost tint
     if(b.power==='ice'){
       ctx.save();ctx.globalAlpha=0.35;ctx.beginPath();ctx.arc(b.x,b.y,b.radius+4,0,Math.PI*2);ctx.fillStyle='#aaeeff';ctx.fill();ctx.restore();
     }
-    // Rainbow: hue-shifted aura
     if(b.power==='rainbow'){
       const hue=(performance.now()*0.25)%360;
       ctx.save();ctx.globalAlpha=0.4;ctx.beginPath();ctx.arc(b.x,b.y,b.radius+6,0,Math.PI*2);ctx.fillStyle=`hsl(${hue},100%,65%)`;ctx.fill();ctx.restore();
     }
+    // Tell glow
+    if (b.tellGlow > 0) {
+      ctx.save();
+      ctx.globalAlpha = b.tellGlow * 0.85;
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 40 * b.tellGlow;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius * b.tellScaleX * 1.1, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.fill();
+      ctx.restore();
+    }
+    // Last booha: golden halo
+    if (gs.isLastBooha && b.launched) {
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.006);
+      ctx.save(); ctx.globalAlpha = 0.3 * pulse;
+      ctx.shadowColor = '#ffdd44'; ctx.shadowBlur = 30;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius + 10, 0, Math.PI*2);
+      ctx.fillStyle = '#ffdd44'; ctx.fill();
+      ctx.restore();
+    }
+
     const img=bst.imgs[b.ri];
-    ctx.save();ctx.translate(b.x,b.y);
-    if(b.launched)ctx.rotate(Math.atan2(b.vy,b.vx)*0.2);
+    ctx.save();
+    ctx.translate(b.x,b.y);
+    if(b.launched) ctx.rotate(Math.atan2(b.vy,b.vx)*0.2);
+    // Apply tell scale transform
+    ctx.scale(b.tellScaleX || 1, b.tellScaleY || 1);
+    // Impact compress for princess (squash on hit)
+    if (b.impactCompress > 0) {
+      const ic = b.impactCompress;
+      ctx.scale(1 + ic * 0.3, 1 - ic * 0.2);
+    }
     if(img){ctx.drawImage(img,-b.radius*1.4,-b.radius*1.4,b.radius*2.8,b.radius*2.8);}
     else{ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,0,b.radius,Math.PI,0,false);ctx.lineTo(b.radius,22);ctx.quadraticCurveTo(0,b.radius+12,-b.radius,22);ctx.closePath();ctx.fill();}
     ctx.restore();
+  }
+
+  // ── Draw: Ghost sparks (nightmare trail) ─────────────
+  function drawGhostSparks() {
+    for (const p of sparks) {
+      if (p.type !== 'ghost') continue;
+      ctx.save();
+      ctx.globalAlpha = clamp(p.life, 0, 1) * 0.35;
+      const img = bst.imgs[p.ri];
+      if (img) {
+        ctx.drawImage(img, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+      } else {
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#9900ff'; ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   // ── Draw: Minis ───────────────────────────────────────
@@ -996,18 +1741,17 @@
     for(let i=0;i<gs.blocks.length;i++){
       const block=gs.blocks[i];
       const sx=(rnd()-0.5)*8*block.shake,sy=(rnd()-0.5)*6*block.shake;
-      const bx=block.x-block.w/2,by=block.y-block.h/2,bw=block.w,bh=block.h;
+      const compY = block.compressY || 0;
+      const bx=block.x-block.w/2,by=block.y-block.h/2+compY,bw=block.w,bh=block.h-compY;
       const m=MAT[block.material]||MAT.wood;
       ctx.save();ctx.globalAlpha=block.broken?0.28:1;ctx.translate(sx,sy);
 
-      // Frozen tint
       if(block.frozen){
         ctx.fillStyle='#c0f0ff';ctx.strokeStyle='#88ddff';ctx.lineWidth=2;
         rr(ctx,bx,by,bw,bh,8,true,true);
         ctx.globalAlpha*=0.5;ctx.fillStyle='rgba(170,240,255,0.4)';rr(ctx,bx,by,bw,bh,8,true,false);
         ctx.restore();continue;
       }
-      // Burning orange glow
       if(block.burning&&!block.broken){
         ctx.save();ctx.globalAlpha=(block.burnTimer/120)*0.4;ctx.fillStyle='#ff6600';
         rr(ctx,bx-2,by-2,bw+4,bh+4,10,true,false);ctx.restore();
@@ -1074,11 +1818,13 @@
 
   // ── Draw: FX ─────────────────────────────────────────
   function drawFXBehind(){
-    for(const d of dusts){ctx.save();ctx.globalAlpha=d.life*0.22;ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle='rgba(200,190,180,0.5)';ctx.fill();ctx.restore();}
-    for(const w of waves){ctx.save();ctx.globalAlpha=w.life*0.7;ctx.strokeStyle=w.col;ctx.lineWidth=2.5*w.life;ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    for(const d of dusts){ctx.save();ctx.globalAlpha=d.life*0.22;ctx.beginPath();ctx.arc(d.x,d.y||0,d.r,0,Math.PI*2);ctx.fillStyle='rgba(200,190,180,0.5)';ctx.fill();ctx.restore();}
+    for(const w of waves){ctx.save();ctx.globalAlpha=w.life*0.7;ctx.strokeStyle=w.col;ctx.lineWidth=(w.thick||2.5)*w.life;ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,Math.PI*2);ctx.stroke();ctx.restore();}
   }
   function drawFXFront(){
+    drawGhostSparks();
     for(const p of sparks){
+      if (p.type === 'ghost') continue; // already drawn
       ctx.save();ctx.globalAlpha=clamp(p.life,0,1)*(p.alpha||1);ctx.fillStyle=p.col;
       ctx.translate(p.x,p.y);if(p.rot!==undefined)ctx.rotate(p.rot);
       if(p.type==='shard'){const s=p.r;ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*0.7,s*0.6);ctx.lineTo(-s*0.7,s*0.4);ctx.closePath();ctx.fillStyle=p.col;ctx.strokeStyle='rgba(180,240,255,0.6)';ctx.lineWidth=0.8;ctx.fill();ctx.stroke();}
@@ -1086,6 +1832,7 @@
       else{ctx.beginPath();ctx.arc(0,0,p.r,0,Math.PI*2);ctx.fill();}
       ctx.restore();
     }
+    drawScorchMarks();
   }
   function drawFlash(){
     if(gs.flash<=0)return;
@@ -1108,7 +1855,6 @@
       if(img)ctx.drawImage(img,sx+4,sy+4,SW-8,SH-18);
       else{ctx.beginPath();ctx.arc(sx+SW/2,sy+SH/2-6,14,0,Math.PI*2);ctx.fillStyle='#aaa';ctx.fill();}
       ctx.restore();
-      // Stock badge
       const bw=stock>=10?22:16;
       ctx.save();ctx.globalAlpha=isAvail?1:0.35;
       ctx.fillStyle=isAvail?(isSel?'#fff':'rgba(255,255,255,0.55)'):'rgba(255,255,255,0.15)';
@@ -1118,12 +1864,10 @@
       if(isSel){
         const pulse=0.5+0.5*Math.sin(performance.now()*0.004);
         ctx.save();ctx.globalAlpha=0.25*pulse;ctx.strokeStyle='#fff';ctx.lineWidth=3;rr(ctx,sx-2,sy-2,SW+4,SH+4,12,false,true);ctx.restore();
-        // Show power desc below selector
         const r=ROSTER[i];
         ctx.save();ctx.globalAlpha=0.65;ctx.fillStyle='#fff';ctx.font='bold 10px system-ui,sans-serif';
         ctx.fillText(r.name,sx,sy+SH+14);ctx.restore();
         ctx.save();ctx.globalAlpha=0.45;ctx.fillStyle='#ffe';ctx.font='9px system-ui,sans-serif';
-        // word-wrap desc to ~SW*2 chars
         const words=r.desc.split(' ');let line='';let dy=0;
         for(const w of words){
           const test=line?line+' '+w:w;
@@ -1140,19 +1884,24 @@
   // ── Draw: HUD ────────────────────────────────────────
   function drawHUD(){
     ctx.save();ctx.textBaseline='middle';
-    // Progress bar
+    // Last booha: pulsing red border
+    if (gs.isLastBooha && gs.phase === P.PLAY) {
+      const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.005);
+      ctx.save(); ctx.globalAlpha = 0.22 * pulse;
+      ctx.strokeStyle = '#ff4444'; ctx.lineWidth = 6;
+      ctx.strokeRect(0, 0, W, H);
+      ctx.restore();
+    }
     const barW=W*clamp(gs.pct/100,0,1);
     ctx.save();ctx.globalAlpha=0.55;ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fillRect(0,3,W,5);
     const pg=ctx.createLinearGradient(0,0,W,0);
     pg.addColorStop(0,'#ff7cfb');pg.addColorStop(0.5,'#7cfff8');pg.addColorStop(1,'#ffdf80');
     ctx.fillStyle=pg;ctx.fillRect(0,3,barW,5);ctx.restore();
-    // Round badge
     ctx.save();ctx.globalAlpha=0.88;ctx.fillStyle='rgba(8,6,16,0.75)';ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;rr(ctx,SX,12,SW,50,10,true,true);ctx.restore();
     ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='bold 9px system-ui,sans-serif';ctx.fillText('ROUND',SX+SW/2-ctx.measureText('ROUND').width/2,24);
     ctx.fillStyle='#fff';ctx.font='bold 20px system-ui,sans-serif';ctx.fillText(String(gs.roundN),SX+SW/2-ctx.measureText(String(gs.roundN)).width/2,44);
-    // Right pills
     const pills=[
-      {label:'SHOTS',  value:String(gs.ghostsLeft),                accent:'#ff9f7f'},
+      {label:'SHOTS',  value:String(gs.ghostsLeft),                accent: gs.isLastBooha ? '#ff4444' : '#ff9f7f'},
       {label:'DAMAGE', value:`${Math.round(gs.pct)}%`,              accent:'#7cfff8'},
       {label:'TARGET', value:`${(LEVELS[gs.round]?.targetPercent||100)}%`, accent:'#ffdf80'}
     ];
@@ -1177,7 +1926,6 @@
     ctx.fillText('DESTRUCTION',W/2,H/2-58);ctx.shadowBlur=0;
     ctx.font='15px system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.55)';
     ctx.fillText('Pull your Booha back and let fly. Smash everything!',W/2,H/2-16);
-    // Start button
     const bx=W/2-140,by=H/2+10,bw=280,bh=70;
     ctx.shadowColor='#ffdd44';ctx.shadowBlur=30;
     const bg=ctx.createLinearGradient(bx,by,bx,by+bh);bg.addColorStop(0,'#ffe566');bg.addColorStop(1,'#ff9900');
@@ -1199,7 +1947,6 @@
     ctx.font='20px system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.75)';ctx.fillText(gs.cardSub,W/2,H/2-28);
     ctx.font='14px system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.45)';
     ctx.fillText(`${Math.round(gs.pct)}% destruction  ·  Best shot ${Math.round(gs.bestShot)}%`,W/2,H/2+18);
-    // Action button
     const bx=W/2-130,by=H*0.62,bw=260,bh=58;
     const bg=ctx.createLinearGradient(bx,by,bx,by+bh);
     bg.addColorStop(0,win?'#44ff88':'#ff9944');bg.addColorStop(1,win?'#009944':'#cc4400');
@@ -1240,7 +1987,7 @@
     requestAnimationFrame(tick);
   }
 
-  // ── Resize — letterbox canvas inside viewport ─────────
+  // ── Resize ───────────────────────────────────────────
   function resize(){
     const vw=window.innerWidth,vh=window.innerHeight;
     const scale=Math.min(vw/W,vh/H);
