@@ -48,8 +48,12 @@
   const dusts     = [];
   const confetti  = [];
   const powers    = [];
-  const scorchMarks = [];   // fire scorch spots on blocks
+  const scorchMarks = [];
   const shake     = { v:0, decay:0.87 };
+
+  // Hard particle caps — checked at insertion, not at draw
+  const CAP = { sparks:180, waves:30, dusts:40, confetti:280, damageConfetti:80, scorchMarks:12 };
+  function pushCapped(arr, cap, item) { if (arr.length < cap) arr.push(item); }
 
   // ── Landscape lock overlay ───────────────────────────
   // True landscape lock: fires on ANY portrait orientation, not just phones
@@ -117,12 +121,31 @@
   }
 
   const sfxMuted = { v: false };
+  // Audio pool: reuse pre-created Audio elements instead of new Audio() per hit
+  const SFX_POOL_SIZE = 5;
+  const sfxPool = {};
+  function getSFXNode(src) {
+    if (!sfxPool[src]) {
+      sfxPool[src] = Array.from({ length: SFX_POOL_SIZE }, () => new Audio(src));
+    }
+    const pool = sfxPool[src];
+    const free = pool.find(a => a.ended || (a.paused && a.currentTime === 0));
+    if (free) return free;
+    // All busy: reclaim the one furthest along
+    pool.sort((a, b) => b.currentTime - a.currentTime);
+    const oldest = pool[0];
+    oldest.pause(); oldest.currentTime = 0;
+    return oldest;
+  }
   function playSFX(src, vol=1, rate=1) {
     if (sfxMuted.v || !src) return;
-    const a = new Audio(src);
-    a.volume = Math.max(0,Math.min(1,vol));
-    a.playbackRate = rate;
-    a.play().catch(()=>{});
+    try {
+      const a = getSFXNode(src);
+      a.volume = Math.max(0, Math.min(1, vol));
+      a.playbackRate = rate;
+      a.currentTime = 0;
+      a.play().catch(()=>{});
+    } catch(e) {}
   }
 
   function synthPop(freq=500, vol=0.3, dur=0.08) {
@@ -314,7 +337,7 @@
     const m=MAT[mat]||MAT.wood;
     for(let i=0;i<n;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(1.5,Math.min(12,spd*0.7)),chip=mat!=='glass'&&rnd()<0.4;
-      sparks.push({x,y,vx:Math.cos(a)*mag,vy:Math.sin(a)*mag-rnd(0,3),
+      pushCapped(sparks, CAP.sparks, {x,y,vx:Math.cos(a)*mag,vy:Math.sin(a)*mag-rnd(0,3),
         life:1,r:chip?rnd(2.5,5):rnd(1,2.5),col:rnd()<0.5?m.spark:m.chip,
         type:chip?'chip':'dot',grav:chip?0.28:0.12,rot:rnd(0,Math.PI*2),rotV:rnd(-0.2,0.2)});
     }
@@ -322,7 +345,7 @@
   function spawnGlass(x,y,w,h) {
     for(let i=0,n=10+~~rnd(0,8);i<n;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(3,14);
-      sparks.push({x:x+rnd(-w*0.4,w*0.4),y:y+rnd(-h*0.4,h*0.4),
+      pushCapped(sparks, CAP.sparks, {x:x+rnd(-w*0.4,w*0.4),y:y+rnd(-h*0.4,h*0.4),
         vx:Math.cos(a)*mag,vy:Math.sin(a)*mag-rnd(1,5),
         life:1,r:rnd(4,12),col:'#b7ecff',type:'shard',grav:0.32,
         rot:rnd(0,Math.PI*2),rotV:rnd(-0.35,0.35),alpha:0.85});
@@ -331,67 +354,62 @@
   function spawnIce(x,y,w,h) {
     for(let i=0;i<14;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(2,9);
-      sparks.push({x:x+rnd(-w*0.3,w*0.3),y:y+rnd(-h*0.3,h*0.3),
+      pushCapped(sparks, CAP.sparks, {x:x+rnd(-w*0.3,w*0.3),y:y+rnd(-h*0.3,h*0.3),
         vx:Math.cos(a)*mag,vy:Math.sin(a)*mag-rnd(0,4),
         life:1,r:rnd(3,10),col:pick(['#aaeeff','#ddf8ff','#88ddff','#ffffff']),type:'shard',grav:0.25,
         rot:rnd(0,Math.PI*2),rotV:rnd(-0.3,0.3),alpha:0.9});
     }
   }
-  function spawnDust(x,y) { dusts.push({x,y,r:4,maxR:rnd(28,48),life:1}); }
-  function spawnWave(x,y,col,maxR=60){ waves.push({x,y,r:4,maxR,life:1,col}); }
+  function spawnDust(x,y) { pushCapped(dusts, CAP.dusts, {x,y,r:4,maxR:rnd(28,48),life:1}); }
+  function spawnWave(x,y,col,maxR=60){ pushCapped(waves, CAP.waves, {x,y,r:4,maxR,life:1,col}); }
+  function spawnScorch(x, y) {
+    pushCapped(scorchMarks, CAP.scorchMarks, { x, y, r: rnd(12, 22), life: 1, decay: 0.003 });
+  }
   function addShake(v) { shake.v=Math.max(shake.v,v); }
 
-  // ── Scorch marks (fire impact) ───────────────────────
-  function spawnScorch(x, y) {
-    scorchMarks.push({ x, y, r: rnd(12, 22), life: 1, decay: 0.003 });
-  }
-
-  // ── Ring crack (ice impact) ──────────────────────────
+  // Ring crack (ice impact)
   function spawnRingCrack(x, y) {
-    // Thin expanding ring, white→blue fade
-    waves.push({ x, y, r: 2, maxR: 55, life: 1, col: '#ffffff', thick: 3 });
-    waves.push({ x, y, r: 4, maxR: 38, life: 1, col: '#aaeeff', thick: 2 });
+    pushCapped(waves, CAP.waves, { x, y, r: 2, maxR: 55, life: 1, col: '#ffffff', thick: 3 });
+    pushCapped(waves, CAP.waves, { x, y, r: 4, maxR: 38, life: 1, col: '#aaeeff', thick: 2 });
   }
 
   // Trail emitters
   function spawnEmber(x,y) {
-    sparks.push({x,y,vx:rnd(-1.5,1.5),vy:rnd(-2.5,-0.5),life:1,r:rnd(2,5),
+    pushCapped(sparks, CAP.sparks, {x,y,vx:rnd(-1.5,1.5),vy:rnd(-2.5,-0.5),life:1,r:rnd(2,5),
       col:pick(['#ff6600','#ff9900','#ffcc00','#ff3300']),type:'dot',grav:0.05+rnd()*0.04,
       rot:0,rotV:0, decay:rnd(0.025,0.05)});
   }
   function spawnRainbow(x,y) {
-    // sine-wave trail: offset y by sine of progress
     const hue=(performance.now()*0.3)%360;
-    sparks.push({x,y,vx:rnd(-0.3,0.3),vy:rnd(-0.2,0.1),life:1,r:rnd(4,9),
+    pushCapped(sparks, CAP.sparks, {x,y,vx:rnd(-0.3,0.3),vy:rnd(-0.2,0.1),life:1,r:rnd(4,9),
       col:`hsl(${hue},100%,70%)`,type:'dot',grav:0.02,rot:0,rotV:0, decay:rnd(0.012,0.022)});
   }
   function spawnTeleport(x,y) {
     for(let i=0;i<30;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(5,22);
-      sparks.push({x,y,vx:Math.cos(a)*mag,vy:Math.sin(a)*mag,life:1,
+      pushCapped(sparks, CAP.sparks, {x,y,vx:Math.cos(a)*mag,vy:Math.sin(a)*mag,life:1,
         r:rnd(3,9),col:pick(['#550088','#bb00ff','#ff00ff','#220033']),type:'dot',grav:0.15,rot:0,rotV:0});
     }
-    waves.push({x,y,r:10,maxR:100,life:1,col:'#bb00ff'});
+    pushCapped(waves, CAP.waves, {x,y,r:10,maxR:100,life:1,col:'#bb00ff'});
     addShake(8);
   }
   function spawnDetonation(x,y) {
     for(let i=0;i<80;i++){
       const a=rnd(0,Math.PI*2),mag=rnd(8,32);
-      sparks.push({x,y,vx:Math.cos(a)*mag,vy:Math.sin(a)*mag-rnd(0,5),life:1,
+      pushCapped(sparks, CAP.sparks, {x,y,vx:Math.cos(a)*mag,vy:Math.sin(a)*mag-rnd(0,5),life:1,
         r:rnd(4,14),col:pick(['#ff0088','#ff8800','#ffff00','#00ffaa','#0088ff','#cc00ff']),
         type:'dot',grav:0.2,rot:rnd(0,Math.PI*2),rotV:rnd(-0.3,0.3)});
     }
-    [60,90,130].forEach(maxR=>waves.push({x,y,r:4,maxR,life:1,col:'#ffffff'}));
+    [60,90,130].forEach(maxR=>pushCapped(waves, CAP.waves, {x,y,r:4,maxR,life:1,col:'#ffffff'}));
     addShake(16);
   }
 
   // ── Rock chip trail ──────────────────────────────────
   function spawnChipTrail(x, y, vx, vy) {
-    // chips fly backward relative to motion
     const ang = Math.atan2(-vy, -vx);
     for (let i = 0; i < 2; i++) {
       const spread = rnd(-0.8, 0.8);
-      sparks.push({
+      pushCapped(sparks, CAP.sparks, {
         x, y,
         vx: Math.cos(ang + spread) * rnd(2, 7),
         vy: Math.sin(ang + spread) * rnd(2, 7),
@@ -405,12 +423,12 @@
 
   // Heavy dust trail — falls straight down
   function spawnHeavyDust(x, y) {
-    dusts.push({ x: x + rnd(-8, 8), y, r: rnd(3, 7), maxR: rnd(12, 20), life: 0.7, falling: true, vy: rnd(1, 3) });
+    pushCapped(dusts, CAP.dusts, { x: x + rnd(-8, 8), y, r: rnd(3, 7), maxR: rnd(12, 20), life: 0.7, falling: true, vy: rnd(1, 3) });
   }
 
   // Ice vapor
   function spawnIceVapor(x, y) {
-    sparks.push({
+    pushCapped(sparks, CAP.sparks, {
       x, y: y + rnd(-4, 4),
       vx: rnd(-1, 1), vy: rnd(-1.5, -0.2),
       life: 0.6, r: rnd(4, 9),
@@ -422,8 +440,7 @@
 
   // Nightmare ghost trail (lagged, semi-transparent)
   function spawnGhostTrail(x, y, ri) {
-    // Store as a special ghost particle — drawn as faded booha image
-    sparks.push({
+    pushCapped(sparks, CAP.sparks, {
       x, y, vx: 0, vy: 0, life: 0.55, r: B_RADIUS * 1.4,
       col: '#9900ff', type: 'ghost', grav: 0, rot: 0, rotV: 0,
       decay: rnd(0.04, 0.07), ri
@@ -435,7 +452,10 @@
   function triggerDeathExplosion(b) {
     const x = b.x, y = b.y, power = b.power, ri = b.ri;
     const isLast = gs.isLastBooha;
-    const scale  = isLast ? 1.6 : 1;  // last booha = amplified
+    const scale  = isLast ? 1.6 : 1;
+    // Confetti helper that respects the cap
+    const pushC = item => pushCapped(confetti, CAP.confetti, item);
+    const pushDC = item => pushCapped(gs.damageConfetti, CAP.damageConfetti, item);
 
     switch (power) {
 
@@ -448,7 +468,7 @@
         for (let i = 0; i < ~~(55 * scale); i++) {
           const ang = rnd(-Math.PI, 0);  // mostly upward
           const mag = rnd(3, 15);
-          confetti.push({
+          pushC({
             x: x + rnd(-20, 20), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 8),
             life: 1, decay: rnd(0.004, 0.01), r: rnd(8, 18),
@@ -465,7 +485,7 @@
           });
         }
         // Crater wave
-        waves.push({ x, y: FLOOR_Y, r: 4, maxR: 90 * scale, life: 1, col: '#cc5500' });
+        pushCapped(waves, CAP.waves, { x, y: FLOOR_Y, r: 4, maxR: 90 * scale, life: 1, col: '#cc5500' });
         spawnDust(x - 30, FLOOR_Y); spawnDust(x, FLOOR_Y); spawnDust(x + 30, FLOOR_Y);
         break;
       }
@@ -480,7 +500,7 @@
         for (let i = 0; i < shardCount; i++) {
           const ang = rnd(-Math.PI, 0);
           const mag = rnd(4, 14);
-          confetti.push({
+          pushC({
             x: x + rnd(-12, 12), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
             life: 1, decay: rnd(0.002, 0.006), r: rnd(5, 14),
@@ -527,14 +547,14 @@
             damageTimer: 0,
           };
           if (dmgEnabled) {
-            gs.damageConfetti.push(dc);
+            pushDC(dc);
           } else {
-            confetti.push(dc);
+            pushC(dc);
           }
         }
         // scorch mark at impact
         spawnScorch(x, y);
-        waves.push({ x, y, r: 4, maxR: 75 * scale, life: 1, col: '#ff6600' });
+        pushCapped(waves, CAP.waves, { x, y, r: 4, maxR: 75 * scale, life: 1, col: '#ff6600' });
         break;
       }
 
@@ -547,7 +567,7 @@
         for (let i = 0; i < heartCount; i++) {
           const spread = rnd(-0.9, 0.9);
           const floatSpd = rnd(2.5, 8);
-          confetti.push({
+          pushC({
             x: x + rnd(-25, 25), y,
             vx: spread * rnd(1, 4),
             vy: -floatSpd,           // float UP
@@ -565,7 +585,7 @@
           });
         }
         // Soft bouncy sound & gentle wave
-        waves.push({ x, y, r: 4, maxR: 55 * scale, life: 1, col: '#ff88cc' });
+        pushCapped(waves, CAP.waves, { x, y, r: 4, maxR: 55 * scale, life: 1, col: '#ff88cc' });
         break;
       }
 
@@ -578,7 +598,7 @@
         const hues = [0, 30, 60, 120, 200, 270, 320];
         hues.forEach((h, i) => {
           setTimeout(() => {
-            waves.push({ x, y, r: 4, maxR: (80 + i * 12) * scale, life: 1, col: `hsl(${h},100%,65%)`, thick: 5 - i * 0.5 });
+            pushCapped(waves, CAP.waves, { x, y, r: 4, maxR: (80 + i * 12) * scale, life: 1, col: `hsl(${h},100%,65%)`, thick: 5 - i * 0.5 });
           }, i * 18);
         });
         // Phase 2: confetti after 120ms, using damage confetti for rainbow type
@@ -602,8 +622,8 @@
               damageTimer: 0,
               bounce: 0.25, bounced: false,
             };
-            if (dc.damaging) gs.damageConfetti.push(dc);
-            else confetti.push(dc);
+            if (dc.damaging) pushDC(dc);
+            else pushC(dc);
           }
         }, 130);
         break;
@@ -629,7 +649,7 @@
           for (let i = 0; i < ~~(70 * scale); i++) {
             const ang = rnd(-Math.PI * 0.9, -Math.PI * 0.1); // upward/left arc
             const mag = rnd(5, 18);
-            confetti.push({
+            pushC({
               x: spawnX + rnd(-20, 20), y: spawnY,
               vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
               life: 1, decay: rnd(0.007, 0.016),
@@ -664,7 +684,7 @@
             for (let i = 0; i < count; i++) {
               const ang = rnd(-Math.PI, 0);
               const mag = rnd(3, magMax);
-              confetti.push({
+              pushC({
                 x: x + rnd(-20, 20), y,
                 vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(1, 5),
                 life: 1, decay: rnd(0.006, 0.014), r: rnd(4, rMax),
@@ -677,7 +697,7 @@
                 bounce: 0.35, bounced: false,
               });
             }
-            waves.push({ x, y, r: 4, maxR: (50 + count) * scale, life: 1, col: '#44ff88' });
+            pushCapped(waves, CAP.waves, { x, y, r: 4, maxR: (50 + count) * scale, life: 1, col: '#44ff88' });
             synthPop(200 + delay * 0.5, 0.3, 0.12);
           }, delay);
         });
@@ -715,7 +735,7 @@
               damageTimer: 0,
               bounce: 0.28, bounced: false,
             };
-            gs.damageConfetti.push(dc);
+            pushDC(dc);
           }
           // Visually destroy block
           damageBlock(block, block.hp, block.x, block.y, 20, idx, false);
@@ -726,7 +746,7 @@
         for (let i = 0; i < cnt2; i++) {
           const ang = rnd(-Math.PI, 0);
           const mag = rnd(8, 26);
-          confetti.push({
+          pushC({
             x: x + rnd(-30, 30), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 8),
             life: 1, decay: rnd(0.005, 0.013), r: rnd(5, 16),
@@ -754,7 +774,7 @@
         for (let i = 0; i < cnt; i++) {
           const ang = rnd(-Math.PI, 0);
           const mag = rnd(4, 16);
-          confetti.push({
+          pushC({
             x: x + rnd(-20, 20), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 7),
             life: 1, decay: rnd(0.008, 0.018), r: rnd(cfg.sz[0], cfg.sz[1]),
@@ -864,7 +884,7 @@
         // Mini confetti burst at this position
         for (let j = 0; j < 6; j++) {
           const ang = rnd(0, Math.PI * 2), mag = rnd(2, 7);
-          confetti.push({
+          pushC({
             x: c.x, y: c.y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
             life: 0.7, decay: rnd(0.025, 0.045), r: rnd(2, 5),
@@ -1015,6 +1035,19 @@
   function showCard(phase,title,sub,accent){
     gs.phase=phase; gs.cardTitle=title; gs.cardSub=sub; gs.cardAccent=accent;
     gs.cardTimer=CARD_MS; gs.running=false;
+    // Clear all live shot objects immediately — prevents old round rendering
+    // under the result card while waiting for the setTimeout to fire
+    gs.booha = null;
+    gs.minis = [];
+    gs.damageConfetti = [];
+    gs.fireTrail = [];
+    gs.frozen = new Map();
+    sparks.length = 0;
+    waves.length  = 0;
+    dusts.length  = 0;
+    // Keep confetti alive — it's the celebration, not the game state
+    scorchMarks.length = 0;
+    shake.v = 0;
   }
 
   function advanceRound(){
@@ -1038,6 +1071,8 @@
       piercedOnce:false,
       spawnedMinis:false,
       trailTimer:0,
+      // Lifetime fuse: guarantee explosion even if settle condition never triggers
+      lifeFrames:0, maxLifeFrames:420,
       // Tell state
       tell: null, tellScaleX: 1, tellScaleY: 1, tellGlow: 0,
       // nightmare
@@ -1306,6 +1341,24 @@
       return; // freeze physics during tell
     }
 
+    // Lifetime fuse — fires tell even if Booha never settles cleanly
+    if (b.launched && !b.confettiFired && !gs.shotLock) {
+      b.lifeFrames++;
+      if (b.lifeFrames >= b.maxLifeFrames) {
+        // Force-snap to floor so the explosion looks grounded
+        b.y = FLOOR_Y - b.radius;
+        b.vx = 0; b.vy = 0;
+        if (b.power === 'nightmare') {
+          b.confettiFired = true;
+          triggerDeathExplosion(b);
+          setTimeout(finishShot, NEXT_MS + 600);
+        } else {
+          initTell(b);
+        }
+        return;
+      }
+    }
+
     // Nightmare teleport
     if(b.power==='nightmare'&&!b._teleported){
       b._teleported=true;
@@ -1366,7 +1419,7 @@
       case 'princess':
         // Sparkle trail
         if (tt % 4 === 0) {
-          sparks.push({ x:b.x+rnd(-8,8), y:b.y+rnd(-8,8), vx:rnd(-1,1), vy:rnd(-1,0.5), life:0.8, r:rnd(2,5), col:pick(['#f8c','#fae','#fff']), type:'dot', grav:0.02, rot:0, rotV:0, decay:rnd(0.025,0.045) });
+          pushCapped(sparks, CAP.sparks, { x:b.x+rnd(-8,8), y:b.y+rnd(-8,8), vx:rnd(-1,1), vy:rnd(-1,0.5), life:0.8, r:rnd(2,5), col:pick(['#f8c','#fae','#fff']), type:'dot', grav:0.02, rot:0, rotV:0, decay:rnd(0.025,0.045) });
         }
         break;
     }
@@ -1454,7 +1507,7 @@
         for (let i = 0; i < cnt; i++) {
           const ang = rnd(-Math.PI * 0.85, -Math.PI * 0.15);
           const mag = rnd(4, 20);
-          confetti.push({
+          pushCapped(confetti, CAP.confetti, {
             x: W/2 + rnd(-60, 60), y: H * 0.28,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
             life: 1, decay: rnd(0.006, 0.014), r: rnd(cfg.sz[0], cfg.sz[1]),
