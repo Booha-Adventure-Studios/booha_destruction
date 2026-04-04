@@ -54,6 +54,9 @@
   // Hard particle caps — checked at insertion, not at draw
   const CAP = { sparks:180, waves:30, dusts:40, confetti:280, damageConfetti:80, scorchMarks:12 };
   function pushCapped(arr, cap, item) { if (arr.length < cap) arr.push(item); }
+  // Shorthand helpers — module-level so setTimeout callbacks and updateConfetti can use them
+  const pushC  = item => pushCapped(confetti, CAP.confetti, item);
+  const pushDC = item => pushCapped(gs.damageConfetti, CAP.damageConfetti, item);
 
   // ── Landscape lock overlay ───────────────────────────
   // True landscape lock: fires on ANY portrait orientation, not just phones
@@ -453,9 +456,6 @@
     const x = b.x, y = b.y, power = b.power, ri = b.ri;
     const isLast = gs.isLastBooha;
     const scale  = isLast ? 1.6 : 1;
-    // Confetti helper that respects the cap
-    const pushC = item => pushCapped(confetti, CAP.confetti, item);
-    const pushDC = item => pushCapped(gs.damageConfetti, CAP.damageConfetti, item);
 
     switch (power) {
 
