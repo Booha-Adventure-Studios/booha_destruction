@@ -1,5 +1,5 @@
 
- /* =====================================================
+/* =====================================================
    BOOHA DESTRUCTION  —  destruction_1.js
    Fullscreen canvas. No DOM shell. All UI on-canvas.
    
@@ -1448,7 +1448,25 @@
 
     if(gs.pct>=target){
       sndWin();
-      spawnConfetti(W/2, H*0.3, bst.sel, 'celebrate');
+      // Win screen burst: scatter confetti from top-centre using the current Booha's palette
+      {
+        const r = ROSTER[bst.sel], cfg = r.conf, cnt = ~~(cfg.burst * 1.4);
+        for (let i = 0; i < cnt; i++) {
+          const ang = rnd(-Math.PI * 0.85, -Math.PI * 0.15);
+          const mag = rnd(4, 20);
+          confetti.push({
+            x: W/2 + rnd(-60, 60), y: H * 0.28,
+            vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
+            life: 1, decay: rnd(0.006, 0.014), r: rnd(cfg.sz[0], cfg.sz[1]),
+            col: pick(cfg.cols), sh: pick(cfg.sh),
+            grav: rnd(0.14, 0.28),
+            rot: rnd(0, Math.PI*2), rotV: cfg.spin ? rnd(-0.2, 0.2) : 0,
+            wob: rnd(0, Math.PI*2), wobS: rnd(0.06, 0.14), wobA: rnd(0.5, 2.5),
+            pls: rnd(0, Math.PI*2), plsS: rnd(0.12, 0.22),
+            bounce: rnd(0.2, 0.45), bounced: false,
+          });
+        }
+      }
       celebPops(500);
       showCard(P.WIN, `ROUND ${gs.roundN} CLEAR!`, 'Smashed it! 🎉', '#ffdd44');
       setTimeout(advanceRound, CARD_MS);
