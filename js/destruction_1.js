@@ -54,9 +54,6 @@
   // Hard particle caps — checked at insertion, not at draw
   const CAP = { sparks:180, waves:30, dusts:40, confetti:280, damageConfetti:80, scorchMarks:12 };
   function pushCapped(arr, cap, item) { if (arr.length < cap) arr.push(item); }
-  // Shorthand helpers — module-level so setTimeout callbacks and updateConfetti can use them
-  const pushC  = item => pushCapped(confetti, CAP.confetti, item);
-  const pushDC = item => pushCapped(gs.damageConfetti, CAP.damageConfetti, item);
 
   // ── Landscape lock overlay ───────────────────────────
   // True landscape lock: fires on ANY portrait orientation, not just phones
@@ -468,7 +465,7 @@
         for (let i = 0; i < ~~(55 * scale); i++) {
           const ang = rnd(-Math.PI, 0);  // mostly upward
           const mag = rnd(3, 15);
-          pushC({
+          pushCapped(confetti, CAP.confetti, {
             x: x + rnd(-20, 20), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 8),
             life: 1, decay: rnd(0.004, 0.01), r: rnd(8, 18),
@@ -500,7 +497,7 @@
         for (let i = 0; i < shardCount; i++) {
           const ang = rnd(-Math.PI, 0);
           const mag = rnd(4, 14);
-          pushC({
+          pushCapped(confetti, CAP.confetti, {
             x: x + rnd(-12, 12), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
             life: 1, decay: rnd(0.002, 0.006), r: rnd(5, 14),
@@ -547,9 +544,9 @@
             damageTimer: 0,
           };
           if (dmgEnabled) {
-            pushDC(dc);
+            pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
           } else {
-            pushC(dc);
+            pushCapped(confetti, CAP.confetti, dc);
           }
         }
         // scorch mark at impact
@@ -567,7 +564,7 @@
         for (let i = 0; i < heartCount; i++) {
           const spread = rnd(-0.9, 0.9);
           const floatSpd = rnd(2.5, 8);
-          pushC({
+          pushCapped(confetti, CAP.confetti, {
             x: x + rnd(-25, 25), y,
             vx: spread * rnd(1, 4),
             vy: -floatSpd,           // float UP
@@ -622,8 +619,8 @@
               damageTimer: 0,
               bounce: 0.25, bounced: false,
             };
-            if (dc.damaging) pushDC(dc);
-            else pushC(dc);
+            if (dc.damaging) pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
+            else pushCapped(confetti, CAP.confetti, dc);
           }
         }, 130);
         break;
@@ -649,7 +646,7 @@
           for (let i = 0; i < ~~(70 * scale); i++) {
             const ang = rnd(-Math.PI * 0.9, -Math.PI * 0.1); // upward/left arc
             const mag = rnd(5, 18);
-            pushC({
+            pushCapped(confetti, CAP.confetti, {
               x: spawnX + rnd(-20, 20), y: spawnY,
               vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
               life: 1, decay: rnd(0.007, 0.016),
@@ -684,7 +681,7 @@
             for (let i = 0; i < count; i++) {
               const ang = rnd(-Math.PI, 0);
               const mag = rnd(3, magMax);
-              pushC({
+              pushCapped(confetti, CAP.confetti, {
                 x: x + rnd(-20, 20), y,
                 vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(1, 5),
                 life: 1, decay: rnd(0.006, 0.014), r: rnd(4, rMax),
@@ -735,7 +732,7 @@
               damageTimer: 0,
               bounce: 0.28, bounced: false,
             };
-            pushDC(dc);
+            pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
           }
           // Visually destroy block
           damageBlock(block, block.hp, block.x, block.y, 20, idx, false);
@@ -746,7 +743,7 @@
         for (let i = 0; i < cnt2; i++) {
           const ang = rnd(-Math.PI, 0);
           const mag = rnd(8, 26);
-          pushC({
+          pushCapped(confetti, CAP.confetti, {
             x: x + rnd(-30, 30), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 8),
             life: 1, decay: rnd(0.005, 0.013), r: rnd(5, 16),
@@ -774,7 +771,7 @@
         for (let i = 0; i < cnt; i++) {
           const ang = rnd(-Math.PI, 0);
           const mag = rnd(4, 16);
-          pushC({
+          pushCapped(confetti, CAP.confetti, {
             x: x + rnd(-20, 20), y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag - rnd(2, 7),
             life: 1, decay: rnd(0.008, 0.018), r: rnd(cfg.sz[0], cfg.sz[1]),
@@ -884,7 +881,7 @@
         // Mini confetti burst at this position
         for (let j = 0; j < 6; j++) {
           const ang = rnd(0, Math.PI * 2), mag = rnd(2, 7);
-          pushC({
+          pushCapped(confetti, CAP.confetti, {
             x: c.x, y: c.y,
             vx: Math.cos(ang) * mag, vy: Math.sin(ang) * mag,
             life: 0.7, decay: rnd(0.025, 0.045), r: rnd(2, 5),
