@@ -1,22 +1,17 @@
 
 /* =====================================================
-   BOOHA DESTRUCTION  —  destruction_1.js  (v2)
+   BOOHA DESTRUCTION  —  destruction_1.js  (v3)
    
-   CHANGES FROM v1:
-   1. Round transition race fixed — single roundTransitionTimer,
-      always cleared before setting, finishShot() is idempotent
-   2. roundToken guards all delayed timers (nightmare, monster,
-      rainbow, result flow) so stale callbacks die on round change
-   3. Atomic loadRound — all state reset before blocks/booha/phase set
-   4. FX during WIN/FAIL — only result confetti pool updated,
-      not full gameplay FX stack
-   5. Damage confetti collision — x-range pre-filter, hit-once-then-die
-      option, no more full block scan every 12 frames
-   6. drawConfetti — two loops instead of merged array allocation
-   7. Particle burst counts reduced ~30% on mobile
-   8. Help modal — DOM overlay with left/right roster browser
-   9. Extra: shadowBlur reduced on cards/title, offscreen particles
-      skipped in draw, scorch/wave lifetime trimmed
+   CHANGES FROM v2:
+   1. Structural collapse — blocks lose support and fall
+      - `falling` flag separated from `broken`
+      - `checkSupport()` triggered after any block breaks/falls
+      - Falling blocks apply gravity, bounce, and deal impact damage on land
+      - Chain collapses: landing impact can break weak blocks underneath
+   2. blockIndexDirty flag — buildBlockIndex() batches to once per frame
+      instead of firing on every single block break during burst events
+   3. cloneBlock() initialises falling:false, supported:true
+   4. resetRound() clears blockIndexDirty
    ===================================================== */
 (() => {
   'use strict';
@@ -41,6 +36,14 @@
   const NEXT_MS    = 950;
   const CARD_MS    = 3400;
   const HIT_COOL   = 90;
+
+  // Minimum horizontal overlap fraction for a block to count as "supported"
+  // by the block below it.  0.3 = 30% of the narrower block's width.
+  const SUPPORT_OVERLAP = 0.30;
+
+  // Speed (px/frame) at which a falling-but-not-broken block lands and deals
+  // crush damage to whatever is directly under it.
+  const FALL_CRUSH_SPEED = 9;
 
   // Mobile detection — used to scale burst counts
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
@@ -253,17 +256,15 @@
     monsterExplodeStage: 0,
     damageConfetti: [],
 
-    // ── FIX 1 & 2: Single transition timer + round token ──
     roundTransitionTimer: null,
-    roundToken: 0,            // incremented every loadRound; stale callbacks bail out
+    roundToken: 0,
   };
 
-  // Helper: schedule a round transition — cancels any pending one first
   function queueNextRound(fn, delay) {
     clearTimeout(gs.roundTransitionTimer);
     const token = gs.roundToken;
     gs.roundTransitionTimer = setTimeout(() => {
-      if (gs.roundToken !== token) return; // stale — a new round already loaded
+      if (gs.roundToken !== token) return;
       fn();
     }, delay);
   }
@@ -277,7 +278,6 @@
   const dist  = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
   const pick  = arr => arr[Math.floor(Math.random() * arr.length)];
 
-  // Offscreen check — skip drawing particles that can't be seen
   function offscreen(x, y, r=0) {
     return x + r < -20 || x - r > W + 20 || y + r < -20 || y - r > H + 100;
   }
@@ -375,7 +375,7 @@
   function spawnDust(x, y)          { pushCapped(dusts, CAP.dusts, {x, y, r:4, maxR:rnd(28,48), life:1}); }
   function spawnWave(x, y, col, maxR=60) { pushCapped(waves, CAP.waves, {x, y, r:4, maxR, life:1, col}); }
   function spawnScorch(x, y) {
-    pushCapped(scorchMarks, CAP.scorchMarks, {x, y, r:rnd(12,22), life:1, decay:0.005}); // FIX 9: faster decay
+    pushCapped(scorchMarks, CAP.scorchMarks, {x, y, r:rnd(12,22), life:1, decay:0.005});
   }
   function addShake(v) { shake.v = Math.max(shake.v, v); }
   function spawnRingCrack(x, y) {
@@ -436,12 +436,11 @@
   }
 
   // ── Death explosions ─────────────────────────────────
-  // All setTimeout calls inside here capture the roundToken and bail if stale (FIX 6)
   function triggerDeathExplosion(b) {
     const x = b.x, y = b.y, power = b.power, ri = b.ri;
     const isLast  = gs.isLastBooha;
     const scale   = (isLast ? 1.6 : 1) * BURST_SCALE;
-    const token   = gs.roundToken; // capture for stale-check in delayed callbacks
+    const token   = gs.roundToken;
 
     switch (power) {
       case 'heavy': {
@@ -491,7 +490,7 @@
             grav:rnd(0.04,0.1), rot:rnd(0,Math.PI*2), rotV:rnd(-0.3,0.3),
             wob:rnd(0,Math.PI*2), wobS:rnd(0.08,0.16), wobA:rnd(1,3),
             pls:rnd(0,Math.PI*2), plsS:rnd(0.15,0.25),
-            bounce:0.3, bounced:false, hitOnce:false, // FIX 5: hit-once flag
+            bounce:0.3, bounced:false, hitOnce:false,
           };
           if (dmgEnabled) pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
           else            pushCapped(confetti, CAP.confetti, dc);
@@ -523,12 +522,12 @@
         const hues = [0, 30, 60, 120, 200, 270, 320];
         hues.forEach((h, i) => {
           setTimeout(() => {
-            if (gs.roundToken !== token) return; // FIX 6: stale guard
+            if (gs.roundToken !== token) return;
             pushCapped(waves, CAP.waves, {x, y, r:4, maxR:(80+i*12)*scale, life:1, col:`hsl(${h},100%,65%)`, thick:5-i*0.5});
           }, i * 18);
         });
         setTimeout(() => {
-          if (gs.roundToken !== token) return; // FIX 6: stale guard
+          if (gs.roundToken !== token) return;
           const cnt = ~~(90 * scale);
           for (let i = 0; i < cnt; i++) {
             const ang = rnd(-Math.PI, 0), mag = rnd(6,16), hue = rnd(0,360);
@@ -551,7 +550,7 @@
         gs.nightmareFlicker = true;
         gs.nightmareFlickerTimer = 45;
         setTimeout(() => {
-          if (gs.roundToken !== token) return; // FIX 6: stale guard
+          if (gs.roundToken !== token) return;
           gs.nightmareFlicker = false;
           gs.flash = 1.8;
           addShake(9 * scale);
@@ -585,7 +584,7 @@
         ];
         stages.forEach(({delay, count, magMax, rMax, shakeV}) => {
           setTimeout(() => {
-            if (gs.roundToken !== token) return; // FIX 6: stale guard
+            if (gs.roundToken !== token) return;
             addShake(shakeV);
             for (let i = 0; i < count; i++) {
               const ang = rnd(-Math.PI,0), mag = rnd(3, magMax);
@@ -703,17 +702,83 @@
     return false;
   }
 
-  // ── Block x-range index (for FIX 5) ─────────────────
-  // Built once per round, used by damage confetti collision
-  let blockXIndex = []; // sorted array of {x, halfW, idx}
+  // ── Block x-range index ──────────────────────────────
+  let blockXIndex = [];
+  // v3: dirty flag so we only rebuild once per frame, not once per break
+  let blockIndexDirty = false;
+  function markIndexDirty() { blockIndexDirty = true; }
   function buildBlockIndex() {
-    blockXIndex = gs.blocks.map((b, i) => ({x:b.x, halfW:b.w*0.55, idx:i}));
-    blockXIndex.sort((a,b) => a.x - b.x);
+    blockXIndex = gs.blocks
+      .map((b, i) => ({x:b.x, halfW:b.w*0.55, idx:i}))
+      .sort((a,b) => a.x - b.x);
+    blockIndexDirty = false;
+  }
+  function flushBlockIndex() {
+    if (blockIndexDirty) buildBlockIndex();
+  }
+
+  // ── v3: Structural collapse ──────────────────────────
+  // A block is considered "floor-supported" when its bottom edge is within
+  // a small threshold of FLOOR_Y.
+  const FLOOR_THRESHOLD = 6; // px
+
+  // Returns true if `block` has solid support beneath it.
+  // Support = floor contact OR ≥ SUPPORT_OVERLAP horizontal overlap with a
+  // non-broken, non-falling block whose top edge aligns with this block's bottom.
+  function isBlockSupported(block, idx) {
+    // 1. Floor contact
+    if (block.y + block.h / 2 >= FLOOR_Y - FLOOR_THRESHOLD) return true;
+
+    // 2. Another intact block directly below
+    const myLeft  = block.x - block.w / 2;
+    const myRight = block.x + block.w / 2;
+    const myBottom = block.y + block.h / 2;
+
+    for (let i = 0; i < gs.blocks.length; i++) {
+      if (i === idx) continue;
+      const other = gs.blocks[i];
+      if (other.broken || other.falling) continue;
+
+      const otherTop = other.y - other.h / 2;
+      // Vertical alignment: other's top must be within a tolerance of this block's bottom
+      if (Math.abs(otherTop - myBottom) > 16) continue;
+
+      // Horizontal overlap check
+      const oLeft  = other.x - other.w / 2;
+      const oRight = other.x + other.w / 2;
+      const overlapLeft  = Math.max(myLeft,  oLeft);
+      const overlapRight = Math.min(myRight, oRight);
+      const overlap = overlapRight - overlapLeft;
+      const minWidth = Math.min(block.w, other.w);
+      if (overlap >= minWidth * SUPPORT_OVERLAP) return true;
+    }
+    return false;
+  }
+
+  // Run after any block breaks or a falling block lands.
+  // Marks newly unsupported blocks as falling. Iterates until stable
+  // (so a cascade where A supports B supports C all topples at once).
+  function checkSupport() {
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = 0; i < gs.blocks.length; i++) {
+        const block = gs.blocks[i];
+        if (block.broken || block.falling) continue;
+        if (!isBlockSupported(block, i)) {
+          block.falling = true;
+          block.vy = block.vy || 0; // keep any existing velocity
+          changed = true;
+          // Small visual kick so the fall looks intentional, not a teleport
+          spawnDust(block.x, block.y + block.h / 2);
+          addShake(1.5);
+        }
+      }
+    }
   }
 
   // ── Confetti update ──────────────────────────────────
   function updateConfetti() {
-    // Main confetti pool
     for (let i = confetti.length - 1; i >= 0; i--) {
       const c = confetti[i];
       if (c.gravDelay !== undefined) {
@@ -750,7 +815,7 @@
       if (c.life <= 0) confetti.splice(i, 1);
     }
 
-    // ── FIX 5: Damage confetti — x-range filter + hit-once ──
+    // Damage confetti — x-range filter + hit-once
     for (let i = gs.damageConfetti.length - 1; i >= 0; i--) {
       const c = gs.damageConfetti[i];
       if (c.gravDelay !== undefined) {
@@ -767,21 +832,18 @@
         } else { c.vy *= -0.15; c.y = FLOOR_Y-c.r; c.life -= 0.05; }
       }
 
-      // FIX 5: hit-once — after first block hit, particle becomes decorative only
       if (!c.hitOnce) {
-        // x-range binary search to find candidates
         const cx = c.x, cr = c.r;
         let lo = 0, hi = blockXIndex.length;
-        // find leftmost candidate
         while (lo < hi) { const m = (lo+hi)>>1; if (blockXIndex[m].x + blockXIndex[m].halfW < cx - cr) lo=m+1; else hi=m; }
         for (let j = lo; j < blockXIndex.length; j++) {
           const entry = blockXIndex[j];
-          if (entry.x - entry.halfW > cx + cr) break; // past right edge of c
+          if (entry.x - entry.halfW > cx + cr) break;
           const block = gs.blocks[entry.idx];
           if (!block || block.broken) continue;
           if (dist(cx, c.y, block.x, block.y) < entry.halfW + cr) {
             damageBlock(block, 1, cx, c.y, 5, entry.idx, false);
-            c.hitOnce = true; // won't damage again
+            c.hitOnce = true;
             break;
           }
         }
@@ -792,10 +854,9 @@
     }
   }
 
-  // ── FIX 6: Two-loop draw — no array allocation per frame ──
   function drawConfetti() {
     for (const c of confetti) {
-      if (offscreen(c.x, c.y, c.r)) continue; // FIX 9: skip offscreen
+      if (offscreen(c.x, c.y, c.r)) continue;
       ctx.save();
       ctx.globalAlpha = clamp(c.life, 0, 1) * (c.alpha||1);
       ctx.fillStyle = c.col;
@@ -864,9 +925,8 @@
     ctx.restore();
   }
 
-  // ── FIX 3 & 7: Atomic round management ──────────────
+  // ── Atomic round management ──────────────────────────
   function resetRound() {
-    // Clear all pools and state atomically before anything else touches them
     sparks.length=0; waves.length=0; dusts.length=0; confetti.length=0;
     powers.length=0; scorchMarks.length=0;
     CRACKS.clear(); shake.v=0;
@@ -879,16 +939,14 @@
     bst.stocks=ROSTER.map(b => b.stock);
     bst.sel=0;
     gs.ghostsLeft=bst.totalShots();
+    blockIndexDirty = false; // v3
   }
 
   function loadRound(idx) {
-    // FIX 1: invalidate any pending transition timer
     clearTimeout(gs.roundTransitionTimer);
     gs.roundTransitionTimer = null;
-    // FIX 2: bump roundToken — all stale setTimeout callbacks will bail
     gs.roundToken++;
 
-    // FIX 7: reset state first, then assign new data, then set phase last
     resetRound();
     gs.round  = clamp(idx, 0, LEVELS.length - 1);
     gs.roundN = gs.round + 1;
@@ -896,27 +954,22 @@
     const lvl = LEVELS[gs.round];
     gs.blocks      = lvl.blocks.map((def, i) => cloneBlock(def, i));
     gs.totalBlocks = gs.blocks.length;
-    buildBlockIndex(); // FIX 5: build sorted x-index for damage confetti
+    buildBlockIndex();
     gs.booha   = makeBooha();
     gs.running = false;
-    // Phase set absolutely last — nothing renders mid-load
-    // (caller sets phase to PLAY via startRound)
   }
 
   function startRound() { gs.running=true; gs.phase=P.PLAY; }
 
-  // FIX 1: showCard clears live objects immediately; no old-round rendering under card
   function showCard(phase, title, sub, accent) {
     gs.phase    = phase;
     gs.cardTitle= title; gs.cardSub=sub; gs.cardAccent=accent;
     gs.cardTimer= CARD_MS;
     gs.running  = false;
-    // Wipe live shot objects — card shows on clean state
     gs.booha    = null; gs.minis=[]; gs.damageConfetti=[];
     gs.fireTrail= []; gs.frozen=new Map();
     sparks.length=0; waves.length=0; dusts.length=0;
     scorchMarks.length=0; shake.v=0;
-    // confetti stays — it's the celebration
   }
 
   function advanceRound() {
@@ -944,12 +997,19 @@
       impactCompress:0, impactCompressDir:0,
     };
   }
+
+  // v3: cloneBlock initialises falling:false
   function cloneBlock(def, idx) {
     const y = typeof def.floorOffset==='number' ? FLOOR_Y-def.floorOffset : def.y;
     CRACKS.delete(idx);
-    return {x:def.x, y, w:def.w, h:def.h, material:def.material||'wood',
-      hp:def.hp||1, maxHp:def.hp||1, broken:false, shake:0, vy:0, fallen:false, hitFlash:0,
-      frozen:false, burning:false, burnTimer:0, ringCrack:false, compressY:0};
+    return {
+      x:def.x, y, w:def.w, h:def.h, material:def.material||'wood',
+      hp:def.hp||1, maxHp:def.hp||1,
+      broken:false,
+      falling:false,   // v3: block is toppling due to lost support
+      shake:0, vy:0, fallen:false, hitFlash:0,
+      frozen:false, burning:false, burnTimer:0, ringCrack:false, compressY:0,
+    };
   }
 
   // ── Power helpers ────────────────────────────────────
@@ -1003,8 +1063,10 @@
       addShake(Math.min(10, spd*0.6+4));
       if (doSFX) sndBreak();
       gs.debTimer=18;
-      // FIX 5: update block index when a block breaks
-      buildBlockIndex();
+      // v3: dirty flag instead of immediate rebuild
+      markIndexDirty();
+      // v3: check for blocks that have lost support
+      checkSupport();
     }
   }
 
@@ -1067,29 +1129,127 @@
     }
   }
 
-  // ── Update: blocks ────────────────────────────────────
+  // ── v3: updateBlocks — handles both broken and falling ──
   function updateBlocks() {
-    for (const block of gs.blocks) {
+    // Flush the index dirty flag at the top of the frame
+    flushBlockIndex();
+
+    let anyFallingLanded = false;
+
+    for (let i = 0; i < gs.blocks.length; i++) {
+      const block = gs.blocks[i];
+
+      // ── Broken blocks (destroyed): keep falling through floor ──
       if (block.broken) {
-        block.vy+=GRAVITY*0.6; block.y+=block.vy;
-        if(!block.fallen&&block.y+block.h/2>=FLOOR_Y){
-          block.y=FLOOR_Y-block.h/2; block.fallen=true;
-          const s=Math.abs(block.vy); sndGnd(s);
-          if(s>6){spawnDust(block.x,FLOOR_Y);spawnDust(block.x+rnd(-20,20),FLOOR_Y);spawnSparks(block.x,FLOOR_Y,block.material,s,6);}
-          block.vy*=-0.18;
+        block.vy += GRAVITY * 0.6;
+        block.y  += block.vy;
+        if (!block.fallen && block.y + block.h / 2 >= FLOOR_Y) {
+          block.y = FLOOR_Y - block.h / 2;
+          block.fallen = true;
+          const s = Math.abs(block.vy); sndGnd(s);
+          if (s > 6) {
+            spawnDust(block.x, FLOOR_Y);
+            spawnDust(block.x + rnd(-20,20), FLOOR_Y);
+            spawnSparks(block.x, FLOOR_Y, block.material, s, 6);
+          }
+          block.vy *= -0.18;
         }
-        block.vy*=0.985;
+        block.vy *= 0.985;
+        // cosmetics
+        if (block.compressY > 0) { block.compressY *= 0.7; if (block.compressY < 0.5) block.compressY = 0; }
+        block.shake *= 0.84; block.hitFlash *= 0.88;
+        continue;
       }
-      if(block.compressY>0){block.compressY*=0.7;if(block.compressY<0.5)block.compressY=0;}
-      block.shake*=0.84; block.hitFlash*=0.88;
+
+      // ── Falling blocks (intact but unsupported): physics + land damage ──
+      if (block.falling) {
+        block.vy += GRAVITY;
+        block.y  += block.vy;
+
+        // Check if it landed on the floor
+        if (block.y + block.h / 2 >= FLOOR_Y) {
+          block.y   = FLOOR_Y - block.h / 2;
+          const spd = Math.abs(block.vy);
+          block.vy  = 0;
+          block.falling = false;
+          anyFallingLanded = true;
+
+          sndGnd(spd);
+          if (spd > 4) {
+            spawnDust(block.x, FLOOR_Y);
+            addShake(Math.min(5, spd * 0.25));
+            spawnSparks(block.x, FLOOR_Y, block.material, spd, 5);
+          }
+
+          // Crush damage: if it hit hard enough, damage the block itself
+          if (spd >= FALL_CRUSH_SPEED) {
+            const crushDmg = spd >= FALL_CRUSH_SPEED * 1.8 ? 2 : 1;
+            damageBlock(block, crushDmg, block.x, block.y, spd, i, true);
+          }
+        } else {
+          // Mid-air: check if it landed on top of another intact block
+          for (let j = 0; j < gs.blocks.length; j++) {
+            if (i === j) continue;
+            const other = gs.blocks[j];
+            if (other.broken || other.falling) continue;
+
+            const otherTop    = other.y - other.h / 2;
+            const blockBottom = block.y + block.h / 2;
+
+            // Close enough vertically?
+            if (blockBottom >= otherTop && blockBottom <= otherTop + block.vy + 2) {
+              // Horizontal overlap?
+              const overlapL = Math.max(block.x - block.w/2, other.x - other.w/2);
+              const overlapR = Math.min(block.x + block.w/2, other.x + other.w/2);
+              if (overlapR - overlapL > block.w * SUPPORT_OVERLAP) {
+                const spd = Math.abs(block.vy);
+                block.y   = otherTop - block.h / 2;
+                block.vy  = 0;
+                block.falling = false;
+                anyFallingLanded = true;
+
+                sndGnd(spd);
+                if (spd > 4) {
+                  spawnDust(block.x, otherTop);
+                  addShake(Math.min(4, spd * 0.2));
+                }
+
+                // Transfer crush damage to the block below
+                if (spd >= FALL_CRUSH_SPEED) {
+                  const crushDmg = spd >= FALL_CRUSH_SPEED * 1.8 ? 2 : 1;
+                  damageBlock(other, crushDmg, other.x, other.y, spd, j, true);
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // Cosmetic updates for all non-broken blocks
+      if (block.compressY > 0) { block.compressY *= 0.7; if (block.compressY < 0.5) block.compressY = 0; }
+      block.shake   *= 0.84;
+      block.hitFlash *= 0.88;
     }
-    if(gs.debTimer>0){if(gs.debTimer===18)sndRub();gs.debTimer--;}
-    updateBurning(); updateFrozen();
-    for(let i=scorchMarks.length-1;i>=0;i--){
-      scorchMarks[i].life-=scorchMarks[i].decay;
-      if(scorchMarks[i].life<=0)scorchMarks.splice(i,1);
+
+    // If any falling block just landed, re-run support check
+    // (the landed block might now support something, or its crush damage
+    // might have removed support from something else)
+    if (anyFallingLanded) {
+      markIndexDirty();
+      checkSupport();
+    }
+
+    if (gs.debTimer > 0) { if (gs.debTimer === 18) sndRub(); gs.debTimer--; }
+    updateBurning();
+    updateFrozen();
+
+    for (let i = scorchMarks.length - 1; i >= 0; i--) {
+      scorchMarks[i].life -= scorchMarks[i].decay;
+      if (scorchMarks[i].life <= 0) scorchMarks.splice(i, 1);
     }
   }
+
   function updateMinis() {
     for(let i=gs.minis.length-1;i>=0;i--){
       const m=gs.minis[i];
@@ -1182,7 +1342,7 @@
     if((b.y>H+200||b.x<-200||b.x>W+200)&&!gs.shotLock)finishShot();
   }
 
-  // ── FIX 1: finishShot — idempotent, uses queueNextRound ──
+  // ── finishShot ───────────────────────────────────────
   function finishShot() {
     if (gs.shotLock) return;
     gs.shotLock=true;
@@ -1226,15 +1386,12 @@
     for(let i=0;i<ROSTER.length;i++){const t=(bst.sel+i)%ROSTER.length;if(bst.stocks[t]>0){bst.sel=t;return;}}
   }
 
-  // ── FIX 4: FX update — stop full stack during WIN/FAIL ──
-  // In WIN/FAIL, only update confetti (the celebration). Skip sparks/waves/dusts/blocks/booha.
+  // ── FX update ────────────────────────────────────────
   function updateFX() {
     if (gs.phase === P.WIN || gs.phase === P.FAIL) {
-      // Result mode: only the confetti celebration
       updateConfetti();
       return;
     }
-    // Full gameplay FX
     for(let i=sparks.length-1;i>=0;i--){
       const p=sparks[i];
       p.vy+=p.grav; p.x+=p.vx; p.y+=p.vy; p.vx*=0.97;
@@ -1243,7 +1400,7 @@
       if(p.y>FLOOR_Y-p.r&&(p.type==='chip'||p.type==='shard')){p.y=FLOOR_Y-p.r;p.vy*=-0.38;p.vx*=0.78;if(Math.abs(p.vy)>5)spawnDust(p.x,FLOOR_Y);}
       if(p.life<=0)sparks.splice(i,1);
     }
-    for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.r+=(w.maxR-w.r)*0.18;w.life-=0.07;if(w.life<=0)waves.splice(i,1);} // FIX 9: slightly faster
+    for(let i=waves.length-1;i>=0;i--){const w=waves[i];w.r+=(w.maxR-w.r)*0.18;w.life-=0.07;if(w.life<=0)waves.splice(i,1);}
     for(let i=dusts.length-1;i>=0;i--){
       const d=dusts[i];
       if(d.falling){d.y=(d.y||0)+(d.vy||2);}
@@ -1265,12 +1422,11 @@
   function selHit(px,py){for(let i=0;i<ROSTER.length;i++){const sy=SY+i*(SH+SGAP);if(px>=SX&&px<=SX+SW&&py>=sy&&py<=sy+SH)return i;}return -1;}
   function htStart(px,py){const bx=W/2-140,by=H/2+10;return px>=bx&&px<=bx+280&&py>=by&&py<=by+70;}
   function htAction(px,py){const bx=W/2-130,by=H*0.62;return px>=bx&&px<=bx+260&&py>=by&&py<=by+58;}
-  function htHelp(px,py){return px>=W-48&&px<=W-8&&py>=8&&py<=48;} // FIX 8: help button hit area
+  function htHelp(px,py){return px>=W-48&&px<=W-8&&py>=8&&py<=48;}
 
   function onDown(evt){
     getAC();
     const p=worldPt(evt);
-    // FIX 8: help button available on title and play screens
     if(htHelp(p.x,p.y)&&(gs.phase===P.TITLE||gs.phase===P.PLAY)){openHelp();evt.preventDefault();return;}
     if(gs.phase===P.TITLE){if(htStart(p.x,p.y)){loadRound(0);startRound();}evt.preventDefault();return;}
     if(gs.phase===P.WIN||gs.phase===P.FAIL){
@@ -1416,15 +1572,30 @@
       ctx.restore();
     }
   }
+
+  // v3: drawBlocks — falling blocks render with a slight tilt for visual flair
   function drawBlocks(){
     for(let i=0;i<gs.blocks.length;i++){
       const block=gs.blocks[i];
-      if(offscreen(block.x,block.y,Math.max(block.w,block.h)))continue; // FIX 9
+      if(offscreen(block.x,block.y,Math.max(block.w,block.h)))continue;
       const sx=(rnd()-0.5)*8*block.shake,sy=(rnd()-0.5)*6*block.shake;
       const compY=block.compressY||0;
       const bx=block.x-block.w/2,by=block.y-block.h/2+compY,bw=block.w,bh=block.h-compY;
       const m=MAT[block.material]||MAT.wood;
-      ctx.save();ctx.globalAlpha=block.broken?0.28:1;ctx.translate(sx,sy);
+
+      ctx.save();
+      ctx.globalAlpha = block.broken ? 0.28 : (block.falling ? 0.88 : 1);
+      ctx.translate(sx, sy);
+
+      // v3: apply a small rotation to falling-but-intact blocks
+      if (block.falling) {
+        // Tilt grows with speed, capped at ~15°
+        const tilt = clamp(block.vy * 0.012, -0.26, 0.26);
+        ctx.translate(block.x, block.y);
+        ctx.rotate(tilt);
+        ctx.translate(-block.x, -block.y);
+      }
+
       if(block.frozen){
         ctx.fillStyle='#c0f0ff';ctx.strokeStyle='#88ddff';ctx.lineWidth=2;rr(ctx,bx,by,bw,bh,8,true,true);
         ctx.globalAlpha*=0.5;ctx.fillStyle='rgba(170,240,255,0.4)';rr(ctx,bx,by,bw,bh,8,true,false);ctx.restore();continue;
@@ -1452,6 +1623,7 @@
       if(!block.broken)drawCracks(block,i);
     }
   }
+
   function drawTraj(){
     if(!gs.dragging||!gs.booha)return;
     const b=gs.booha;let tx=b.x,ty=b.y,tvx=(SLING_X-b.x)*0.19,tvy=(SLING_Y-b.y)*0.19;
@@ -1489,9 +1661,7 @@
     gs.flash*=0.84;
   }
 
-  // ── FIX 8: Help button (canvas) ──────────────────────
   function drawHelpButton(){
-    // Small ? button in top-right corner, visible on title and play
     if(gs.phase!==P.TITLE&&gs.phase!==P.PLAY)return;
     ctx.save();
     ctx.fillStyle='rgba(255,255,255,0.12)';ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=1.5;
@@ -1567,14 +1737,13 @@
     drawHelpButton();
   }
 
-  // FIX 9: reduced shadowBlur on title/card screens
   function drawTitle(){
     ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(0,0,W,H);
     ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='bold 76px system-ui,sans-serif';ctx.fillStyle='#fff';
-    ctx.shadowColor='#aaa';ctx.shadowBlur=12;ctx.fillText('BOOHA',W/2,H/2-115);ctx.shadowBlur=0; // was 20
+    ctx.shadowColor='#aaa';ctx.shadowBlur=12;ctx.fillText('BOOHA',W/2,H/2-115);ctx.shadowBlur=0;
     ctx.font='bold 40px system-ui,sans-serif';ctx.fillStyle='#ffdd44';ctx.shadowColor='#ffaa00';ctx.shadowBlur=12;
-    ctx.fillText('DESTRUCTION',W/2,H/2-58);ctx.shadowBlur=0; // was 18
+    ctx.fillText('DESTRUCTION',W/2,H/2-58);ctx.shadowBlur=0;
     ctx.font='15px system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.55)';
     ctx.fillText('Pull your Booha back and let fly. Smash everything!',W/2,H/2-16);
     const bx=W/2-140,by=H/2+10,bw=280,bh=70;
@@ -1593,7 +1762,7 @@
     ctx.fillStyle=win?'rgba(0,18,0,0.62)':'rgba(28,0,0,0.62)';ctx.fillRect(0,0,W,H);
     ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.font='bold 70px system-ui,sans-serif';ctx.fillStyle=gs.cardAccent;
-    ctx.shadowColor=gs.cardAccent;ctx.shadowBlur=28;ctx.fillText(gs.cardTitle,W/2,H/2-88);ctx.shadowBlur=0; // was 44
+    ctx.shadowColor=gs.cardAccent;ctx.shadowBlur=28;ctx.fillText(gs.cardTitle,W/2,H/2-88);ctx.shadowBlur=0;
     ctx.font='20px system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.75)';ctx.fillText(gs.cardSub,W/2,H/2-28);
     ctx.font='14px system-ui,sans-serif';ctx.fillStyle='rgba(255,255,255,0.45)';
     ctx.fillText(`${Math.round(gs.pct)}% destruction  ·  Best shot ${Math.round(gs.bestShot)}%`,W/2,H/2+18);
@@ -1630,7 +1799,7 @@
     const dt=Math.min(now-lastT,50);lastT=now;
     if(gs.cardTimer>0)gs.cardTimer=Math.max(0,gs.cardTimer-dt);
     if(gs.phase===P.PLAY){updateFX();updateBlocks();updateBooha();}
-    else updateFX(); // FIX 4: updateFX now internally skips gameplay FX on WIN/FAIL
+    else updateFX();
     render();
     requestAnimationFrame(tick);
   }
@@ -1644,7 +1813,7 @@
     gs.scale=scale;
   }
 
-  // ── FIX 8: Help modal (DOM overlay) ─────────────────
+  // ── Help modal (DOM overlay) ─────────────────────────
   let helpOpen = false;
   let helpIdx  = 0;
   let helpEl   = null;
@@ -1699,7 +1868,6 @@
     document.getElementById('bh-prev').onclick  = () => { helpIdx=(helpIdx-1+ROSTER.length)%ROSTER.length; refreshHelp(); };
     document.getElementById('bh-next').onclick  = () => { helpIdx=(helpIdx+1)%ROSTER.length; refreshHelp(); };
     helpEl.addEventListener('click', e => { if(e.target===helpEl) closeHelp(); });
-    // Keyboard nav
     document.addEventListener('keydown', onHelpKey);
   }
   function onHelpKey(e) {
@@ -1721,7 +1889,6 @@
     powerEl.textContent = r.power.toUpperCase();
     descEl.textContent  = r.desc;
     tipEl.textContent   = '💡 ' + (r.tip || '');
-    // Dots
     dotsEl.innerHTML = '';
     ROSTER.forEach((_, i) => {
       const dot = document.createElement('div');
@@ -1736,7 +1903,7 @@
   }
   function openHelp() {
     buildHelpModal();
-    helpIdx = bst.sel; // open on currently selected Booha
+    helpIdx = bst.sel;
     refreshHelp();
     helpEl.style.display = 'flex';
     helpOpen = true;
