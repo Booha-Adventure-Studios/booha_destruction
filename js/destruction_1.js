@@ -166,59 +166,88 @@
     [0,55,120,195,280].forEach((d,i) => setTimeout(() => synthPop(baseFreq + i*100, 0.26, 0.09), d));
   }
 
-  // ── Booha roster ────────────────────────────────────
-  const ROSTER = [
-    { id:'booha',     name:'Booha',     img:'./assets/images/booha_helmet.png',
-      sfx:'./assets/audio/boo-boo.mp3',        stock:5, power:'normal',
-      desc:'Classic. Reliable. Friendly.',
-      tip:'Aim for the middle of tall stacks — the ricochet does the work.',
-      conf:{cols:['#fff','#ffe','#ddf','#fdd','#dfd','#ffd'],sh:['circle','star','sparkle'],sz:[4,10],burst:65,spin:true}},
-    { id:'heavy',     name:'Heavy',     img:'./assets/images/heavy_booha.png',
-      sfx:'./assets/audio/boo-heavy.mp3',    stock:3, power:'heavy',
-      desc:'2× damage. Craters on landing.',
-      tip:'Drop it from high up — vertical hits compress blocks hardest.',
-      conf:{cols:['#f60','#f90','#fc0','#f40','#fa0','#c30'],sh:['chunk','rect','circle'],sz:[7,18],burst:90,spin:false}},
-    { id:'rock',      name:'Rock',      img:'./assets/images/rock_booha.png',
-      sfx:'./assets/audio/boo-rock.mp3',     stock:2, power:'rock',
-      desc:'Pierces one block. Keeps going.',
-      tip:'Angle through multiple blocks in a line for chain damage.',
-      conf:{cols:['#9ab','#cde','#678','#e0e','#456','#abc'],sh:['shard','rect','crystal'],sz:[5,13],burst:58,spin:true}},
-    { id:'ice',       name:'Ice',       img:'./assets/images/ice_booha.png',
-      sfx:'./assets/audio/boo-ice.mp3',      stock:2, power:'ice',
-      desc:'Freezes blocks. They shatter.',
-      tip:'Freeze a structural base block — when it shatters, everything above falls.',
-      conf:{cols:['#aef','#dff','#8df','#fff','#bcf','#6df'],sh:['crystal','sparkle','star'],sz:[4,12],burst:80,spin:true}},
-    { id:'fire',      name:'Fire',      img:'./assets/images/fire_booha.png',
-      sfx:'./assets/audio/boo-fire.mp3',     stock:2, power:'fire',
-      desc:'Burns nearby blocks over time.',
-      tip:'Hit a central block — the burn spreads to everything within range.',
-      conf:{cols:['#f22','#f70','#fa0','#fe0','#f50','#f33'],sh:['flame','circle','sparkle'],sz:[5,14],burst:105,spin:false}},
-    { id:'princess',  name:'Princess',  img:'./assets/images/princess_booha.png',
-      sfx:'./assets/audio/boo-princess.mp3', stock:1, power:'princess',
-      desc:'Light & bouncy. Spawns 3 minis on first hit!',
-      tip:'The minis scatter unpredictably — hit a dense cluster for max chaos.',
-      conf:{cols:['#f8c','#fae','#c4a','#fde','#fff','#fbd'],sh:['heart','star','sparkle','circle'],sz:[4,11],burst:125,spin:true}},
-    { id:'rainbow',   name:'Rainbow',   img:'./assets/images/rainbow_booha.png',
-      sfx:'./assets/audio/boo-rainbow.mp3',  stock:1, power:'rainbow',
-      desc:'Turns blocks to glass. Shimmer trail.',
-      tip:'Glass breaks with one hit — convert a whole wall, then finish it off.',
-      conf:{cols:['#f06','#f80','#ff0','#0f6','#08f','#80f','#f0f'],sh:['sparkle','star','crystal'],sz:[5,13],burst:130,spin:true}},
-    { id:'nightmare', name:'Nightmare', img:'./assets/images/nightmare_booha.png',
-      sfx:'./assets/audio/boo-nightmare.mp3',stock:1, power:'nightmare',
-      desc:'Teleports behind the target!',
-      tip:'Works best when blocks are clustered — it warps to the nearest surviving block.',
-      conf:{cols:['#508','#80c','#b0f','#d4f','#304','#f0f'],sh:['shard','star','sparkle'],sz:[4,13],burst:88,spin:true}},
-    { id:'monster',   name:'Monster',   img:'./assets/images/monster_booha.png',
-      sfx:'./assets/audio/boo-monster.mp3',  stock:1, power:'monster',
-      desc:'Grows with every bounce. HUGE settle.',
-      tip:'Let it bounce off the floor a few times before it hits the blocks.',
-      conf:{cols:['#0c4','#4f8','#cf0','#0f6','#3a0','#8f0'],sh:['chunk','circle','sparkle'],sz:[6,16],burst:95,spin:false}},
-    { id:'ultimate',  name:'Ultimate',  img:'./assets/images/ultimate_booha.png',
-      sfx:'./assets/audio/boo-ultimate.mp3', stock:1, power:'ultimate',
-      desc:'On settle — EVERYTHING in range explodes!',
-      tip:'Land it dead-center in the structure for maximum blast radius.',
-      conf:{cols:['#f08','#f80','#ff0','#0fa','#08f','#c0f','#f48','#4fc'],sh:['star','heart','crystal','sparkle','flame'],sz:[5,16],burst:170,spin:true}},
-  ];
+ // ── Booha roster ────────────────────────────────────
+const ROSTER = [
+  { id:'booha', name:'Yellow Booha', jpName:'イエローブーハー',
+    img:'./assets/images/booha_helmet.png',
+    sfx:'./assets/audio/boo-boo.mp3', stock:5, power:'normal',
+    desc:'Classic. Reliable. Friendly.',
+    jp:'ベーシックであんていしたブーハーです。',
+    tip:'Aim for the middle of tall stacks — the ricochet does the work.',
+    conf:{cols:['#fff','#ffe','#ddf','#fdd','#dfd','#ffd'],sh:['circle','star','sparkle'],sz:[4,10],burst:65,spin:true}},
+
+  { id:'heavy', name:'Heavy Booha', jpName:'ヘビーブーハー',
+    img:'./assets/images/heavy_booha.png',
+    sfx:'./assets/audio/boo-heavy.mp3', stock:3, power:'heavy',
+    desc:'2× damage. Craters on landing.',
+    jp:'とても強く、かたいブロックをこわします。',
+    tip:'Drop it from high up — vertical hits compress blocks hardest.',
+    conf:{cols:['#f60','#f90','#fc0','#f40','#fa0','#c30'],sh:['chunk','rect','circle'],sz:[7,18],burst:90,spin:false}},
+
+  { id:'rock', name:'Rock Booha', jpName:'ロックブーハー',
+    img:'./assets/images/rock_booha.png',
+    sfx:'./assets/audio/boo-rock.mp3', stock:2, power:'rock',
+    desc:'Pierces one block. Keeps going.',
+    jp:'ブロックをつきぬけて、さらに進みます。',
+    tip:'Angle through multiple blocks in a line for chain damage.',
+    conf:{cols:['#9ab','#cde','#678','#e0e','#456','#abc'],sh:['shard','rect','crystal'],sz:[5,13],burst:58,spin:true}},
+
+  { id:'ice', name:'Ice Booha', jpName:'アイスブーハー',
+    img:'./assets/images/ice_booha.png',
+    sfx:'./assets/audio/boo-ice.mp3', stock:2, power:'ice',
+    desc:'Freezes blocks. They shatter.',
+    jp:'ブロックをこおらせます。こおったブロックはこわれやすいです。',
+    tip:'Freeze a structural base block — when it shatters, everything above falls.',
+    conf:{cols:['#aef','#dff','#8df','#fff','#bcf','#6df'],sh:['crystal','sparkle','star'],sz:[4,12],burst:80,spin:true}},
+
+  { id:'fire', name:'Fire Booha', jpName:'ファイアブーハー',
+    img:'./assets/images/fire_booha.png',
+    sfx:'./assets/audio/boo-fire.mp3', stock:2, power:'fire',
+    desc:'Burns nearby blocks over time.',
+    jp:'まわりのブロックをだんだんもやします。',
+    tip:'Hit a central block — the burn spreads to everything within range.',
+    conf:{cols:['#f22','#f70','#fa0','#fe0','#f50','#f33'],sh:['flame','circle','sparkle'],sz:[5,14],burst:105,spin:false}},
+
+  { id:'princess', name:'Princess Booha', jpName:'プリンセスブーハー',
+    img:'./assets/images/princess_booha.png',
+    sfx:'./assets/audio/boo-princess.mp3', stock:1, power:'princess',
+    desc:'Light & bouncy. Spawns 3 minis on first hit!',
+    jp:'あたると、ちいさいブーハーに３つに分かれます。',
+    tip:'The minis scatter unpredictably — hit a dense cluster for max chaos.',
+    conf:{cols:['#f8c','#fae','#c4a','#fde','#fff','#fbd'],sh:['heart','star','sparkle','circle'],sz:[4,11],burst:125,spin:true}},
+
+  { id:'rainbow', name:'Rainbow Booha', jpName:'レインボーブーハー',
+    img:'./assets/images/rainbow_booha.png',
+    sfx:'./assets/audio/boo-rainbow.mp3', stock:1, power:'rainbow',
+    desc:'Turns blocks to glass. Shimmer trail.',
+    jp:'ブロックをガラスに変えます。',
+    tip:'Glass breaks with one hit — convert a whole wall, then finish it off.',
+    conf:{cols:['#f06','#f80','#ff0','#0f6','#08f','#80f','#f0f'],sh:['sparkle','star','crystal'],sz:[5,13],burst:130,spin:true}},
+
+  { id:'nightmare', name:'Nightmare Booha', jpName:'ナイトメアブーハー',
+    img:'./assets/images/nightmare_booha.png',
+    sfx:'./assets/audio/boo-nightmare.mp3', stock:1, power:'nightmare',
+    desc:'Teleports behind the target!',
+    jp:'ブロックのうしろにテレポートします。',
+    tip:'Works best when blocks are clustered — it warps to the nearest surviving block.',
+    conf:{cols:['#508','#80c','#b0f','#d4f','#304','#f0f'],sh:['shard','star','sparkle'],sz:[4,13],burst:88,spin:true}},
+
+  { id:'monster', name:'Monster Booha', jpName:'モンスターブーハー',
+    img:'./assets/images/monster_booha.png',
+    sfx:'./assets/audio/boo-monster.mp3', stock:1, power:'monster',
+    desc:'Grows with every bounce. HUGE settle.',
+    jp:'はねるたびに大きくなります。',
+    tip:'Let it bounce off the floor a few times before it hits the blocks.',
+    conf:{cols:['#0c4','#4f8','#cf0','#0f6','#3a0','#8f0'],sh:['chunk','circle','sparkle'],sz:[6,16],burst:95,spin:false}},
+
+  { id:'ultimate', name:'Ultimate Booha', jpName:'アルティメットブーハー',
+    img:'./assets/images/ultimate_booha.png',
+    sfx:'./assets/audio/boo-ultimate.mp3', stock:1, power:'ultimate',
+    desc:'On settle — EVERYTHING in range explodes!',
+    jp:'ばくはつして、まわりをすべてこわします。',
+    tip:'Land it dead-center in the structure for maximum blast radius.',
+    conf:{cols:['#f08','#f80','#ff0','#0fa','#08f','#c0f','#f48','#4fc'],sh:['star','heart','crystal','sparkle','flame'],sz:[5,16],burst:170,spin:true}},
+];
 
   const SX=14, SY=70, SW=52, SH=52, SGAP=5;
   const bst = {
@@ -1813,56 +1842,86 @@
     gs.scale=scale;
   }
 
-  // ── Help modal (DOM overlay) ─────────────────────────
-  let helpOpen = false;
-  let helpIdx  = 0;
-  let helpEl   = null;
+// ── Help modal (DOM overlay) ─────────────────────────
+let helpOpen = false;
+let helpIdx  = 0;
+let helpEl   = null;
 
-  function buildHelpModal() {
-    if (helpEl) return;
-    helpEl = document.createElement('div');
-    helpEl.id = 'booha-help';
-    Object.assign(helpEl.style, {
-      position:'fixed', inset:'0', background:'rgba(8,5,20,0.88)',
-      display:'none', alignItems:'center', justifyContent:'center',
-      zIndex:'8888', fontFamily:'system-ui,sans-serif',
-    });
-    helpEl.innerHTML = `
-      <div id="bh-panel" style="
-        background:linear-gradient(160deg,#1a1230,#0d0820);
-        border:1px solid rgba(255,255,255,0.14);
-        border-radius:20px;padding:32px 28px;width:340px;max-width:90vw;
-        box-shadow:0 0 60px rgba(0,0,0,0.7);position:relative;text-align:center;
-      ">
-        <button id="bh-close" style="
-          position:absolute;top:12px;right:14px;background:none;border:none;
-          color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;line-height:1;
-        ">✕</button>
-        <div style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,0.35);margin-bottom:18px;text-transform:uppercase">Booha Guide</div>
-        <img id="bh-img" src="" style="width:90px;height:90px;object-fit:contain;margin-bottom:12px;" />
-        <div id="bh-name" style="font-size:26px;font-weight:800;color:#fff;margin-bottom:6px;"></div>
-        <div id="bh-power" style="font-size:12px;letter-spacing:2px;color:#aaa;text-transform:uppercase;margin-bottom:14px;"></div>
-        <div id="bh-desc" style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:10px;line-height:1.5;"></div>
-        <div id="bh-tip" style="
-          font-size:12px;color:#ffdd88;background:rgba(255,200,0,0.08);
-          border:1px solid rgba(255,200,0,0.2);border-radius:8px;
-          padding:8px 12px;margin-bottom:22px;line-height:1.5;
+function buildHelpModal() {
+  if (helpEl) return;
+  helpEl = document.createElement('div');
+  helpEl.id = 'booha-help';
+  Object.assign(helpEl.style, {
+    position:'fixed', inset:'0', background:'rgba(8,5,20,0.88)',
+    display:'none', alignItems:'center', justifyContent:'center',
+    zIndex:'8888', fontFamily:'system-ui,sans-serif',
+  });
+  helpEl.innerHTML = `
+    <div id="bh-panel" style="
+      background:linear-gradient(160deg,#1a1230,#0d0820);
+      border:1px solid rgba(255,255,255,0.14);
+      border-radius:20px;padding:32px 28px;width:340px;max-width:90vw;
+      box-shadow:0 0 60px rgba(0,0,0,0.7);position:relative;text-align:center;
+    ">
+      <button id="bh-close" style="
+        position:absolute;top:12px;right:14px;background:none;border:none;
+        color:rgba(255,255,255,0.5);font-size:22px;cursor:pointer;line-height:1;
+      ">✕</button>
+
+      <div style="
+        font-size:11px;letter-spacing:3px;color:rgba(255,255,255,0.35);
+        margin-bottom:18px;text-transform:uppercase;
+      ">Booha Guide</div>
+
+      <img id="bh-img" src="" style="
+        width:90px;height:90px;object-fit:contain;margin-bottom:12px;
+      " />
+
+      <div id="bh-name-wrap" style="margin-bottom:8px;">
+        <div id="bh-name" style="
+          font-size:26px;font-weight:800;color:#fff;line-height:1.1;
         "></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <button id="bh-prev" style="
-            background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
-            color:#fff;font-size:20px;border-radius:10px;width:44px;height:44px;
-            cursor:pointer;display:flex;align-items:center;justify-content:center;
-          ">‹</button>
-          <div id="bh-dots" style="display:flex;gap:6px;"></div>
-          <button id="bh-next" style="
-            background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
-            color:#fff;font-size:20px;border-radius:10px;width:44px;height:44px;
-            cursor:pointer;display:flex;align-items:center;justify-content:center;
-          ">›</button>
-        </div>
+        <div id="bh-jp-name" style="
+          font-size:13px;color:rgba(255,255,255,0.68);
+          margin-top:3px;line-height:1.2;letter-spacing:0.5px;
+        "></div>
       </div>
-    `;
+
+      <div id="bh-power" style="
+        font-size:12px;letter-spacing:2px;color:#aaa;
+        text-transform:uppercase;margin-bottom:14px;
+      "></div>
+
+      <div id="bh-desc" style="
+        font-size:14px;color:rgba(255,255,255,0.75);
+        margin-bottom:10px;line-height:1.5;
+      "></div>
+
+      <div id="bh-tip" style="
+        font-size:12px;color:#ffdd88;background:rgba(255,200,0,0.08);
+        border:1px solid rgba(255,200,0,0.2);border-radius:8px;
+        padding:8px 12px;margin-bottom:22px;line-height:1.5;
+      "></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <button id="bh-prev" style="
+          background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+          color:#fff;font-size:20px;border-radius:10px;width:44px;height:44px;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;
+        ">‹</button>
+
+        <div id="bh-dots" style="display:flex;gap:6px;"></div>
+
+        <button id="bh-next" style="
+          background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+          color:#fff;font-size:20px;border-radius:10px;width:44px;height:44px;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;
+        ">›</button>
+      </div>
+    </div>
+  `;
+
+   
     document.body.appendChild(helpEl);
     document.getElementById('bh-close').onclick = closeHelp;
     document.getElementById('bh-prev').onclick  = () => { helpIdx=(helpIdx-1+ROSTER.length)%ROSTER.length; refreshHelp(); };
@@ -1876,42 +1935,92 @@
     if (e.key==='ArrowRight') { helpIdx=(helpIdx+1)%ROSTER.length; refreshHelp(); }
     if (e.key==='Escape')     closeHelp();
   }
-  function refreshHelp() {
-    const r = ROSTER[helpIdx];
-    const imgEl   = document.getElementById('bh-img');
-    const nameEl  = document.getElementById('bh-name');
-    const powerEl = document.getElementById('bh-power');
-    const descEl  = document.getElementById('bh-desc');
-    const tipEl   = document.getElementById('bh-tip');
-    const dotsEl  = document.getElementById('bh-dots');
-    if (r.img) imgEl.src = r.img; else imgEl.style.display='none';
-    nameEl.textContent  = r.name;
-    powerEl.textContent = r.power.toUpperCase();
-    descEl.textContent  = r.desc;
-    tipEl.textContent   = '💡 ' + (r.tip || '');
-    dotsEl.innerHTML = '';
-    ROSTER.forEach((_, i) => {
-      const dot = document.createElement('div');
-      Object.assign(dot.style, {
-        width:'6px',height:'6px',borderRadius:'50%',
-        background: i===helpIdx ? '#fff' : 'rgba(255,255,255,0.25)',
-        cursor:'pointer',transition:'background 0.15s',
-      });
-      dot.onclick = () => { helpIdx=i; refreshHelp(); };
-      dotsEl.appendChild(dot);
+   
+ function refreshHelp() {
+  const r = ROSTER[helpIdx];
+
+  const imgEl    = document.getElementById('bh-img');
+  const nameEl   = document.getElementById('bh-name');
+  const jpNameEl = document.getElementById('bh-jp-name');
+  const powerEl  = document.getElementById('bh-power');
+  const descEl   = document.getElementById('bh-desc'); // ← missing
+  const tipEl    = document.getElementById('bh-tip');
+  const dotsEl   = document.getElementById('bh-dots');
+
+  if (r.img) {
+    imgEl.src = r.img;
+    imgEl.style.display = '';
+  } else {
+    imgEl.style.display = 'none';
+  }
+
+  nameEl.textContent = r.name;
+  jpNameEl.textContent = r.jpName || '';
+  powerEl.textContent = r.power.toUpperCase();
+
+  descEl.innerHTML = `
+    ${r.desc}<br>
+    <span style="font-size:12px;opacity:0.7;">${r.jp || ''}</span>
+  `;
+
+  tipEl.textContent = '💡 ' + (r.tip || '');
+
+  dotsEl.innerHTML = '';
+  ROSTER.forEach((_, i) => {
+    const dot = document.createElement('div');
+    Object.assign(dot.style, {
+      width:'6px',
+      height:'6px',
+      borderRadius:'50%',
+      background: i === helpIdx ? '#fff' : 'rgba(255,255,255,0.25)',
+      cursor:'pointer',
+      transition:'background 0.15s',
     });
-  }
-  function openHelp() {
-    buildHelpModal();
-    helpIdx = bst.sel;
-    refreshHelp();
-    helpEl.style.display = 'flex';
-    helpOpen = true;
-  }
-  function closeHelp() {
-    if (helpEl) helpEl.style.display = 'none';
-    helpOpen = false;
-  }
+    dot.onclick = () => {
+      helpIdx = i;
+      refreshHelp();
+    };
+    dotsEl.appendChild(dot);
+  });
+}
+
+  nameEl.textContent = r.name;
+  jpNameEl.textContent = r.jpName || '';
+  powerEl.textContent = r.power.toUpperCase();
+  descEl.textContent = r.desc;
+  tipEl.textContent = '💡 ' + (r.tip || '');
+
+  dotsEl.innerHTML = '';
+  ROSTER.forEach((_, i) => {
+    const dot = document.createElement('div');
+    Object.assign(dot.style, {
+      width:'6px',
+      height:'6px',
+      borderRadius:'50%',
+      background: i === helpIdx ? '#fff' : 'rgba(255,255,255,0.25)',
+      cursor:'pointer',
+      transition:'background 0.15s',
+    });
+    dot.onclick = () => {
+      helpIdx = i;
+      refreshHelp();
+    };
+    dotsEl.appendChild(dot);
+  });
+}
+
+function openHelp() {
+  buildHelpModal();
+  helpIdx = bst.sel;
+  refreshHelp();
+  helpEl.style.display = 'flex';
+  helpOpen = true;
+}
+
+function closeHelp() {
+  if (helpEl) helpEl.style.display = 'none';
+  helpOpen = false;
+}
 
   // ── Boot ─────────────────────────────────────────────
   async function boot(){
