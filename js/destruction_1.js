@@ -1,17 +1,17 @@
 
 /* =====================================================
-   BOOHA DESTRUCTION  —  destruction_1.js  (v3)
-   
-   CHANGES FROM v2:
-   1. Structural collapse — blocks lose support and fall
-      - `falling` flag separated from `broken`
-      - `checkSupport()` triggered after any block breaks/falls
-      - Falling blocks apply gravity, bounce, and deal impact damage on land
-      - Chain collapses: landing impact can break weak blocks underneath
-   2. blockIndexDirty flag — buildBlockIndex() batches to once per frame
-      instead of firing on every single block break during burst events
-   3. cloneBlock() initialises falling:false, supported:true
-   4. resetRound() clears blockIndexDirty
+   BOOHA DESTRUCTION  —  destruction_1.js  (v4)
+
+   CHANGES FROM v3:
+   1. Block traits & resist system
+      - cloneBlock() reads def.traits[] and def.resist{}
+      - hasTrait(), getResist(), powerBlocked() helpers
+      - damageBlock() accepts power param; skips/scales damage
+      - blockCollide() passes power; checks immune before FX
+      - updateBurning() checks burnimmune before tick
+   2. Visual feedback on resistant/immune blocks
+      - drawBlocks() renders a tinted border on blocks with traits
+      - Colour-coded per dominant immunity type
    ===================================================== */
 (() => {
   'use strict';
@@ -37,15 +37,10 @@
   const CARD_MS    = 3400;
   const HIT_COOL   = 90;
 
-  // Minimum horizontal overlap fraction for a block to count as "supported"
-  // by the block below it.  0.3 = 30% of the narrower block's width.
   const SUPPORT_OVERLAP = 0.30;
-
-  // Speed (px/frame) at which a falling-but-not-broken block lands and deals
-  // crush damage to whatever is directly under it.
   const FALL_CRUSH_SPEED = 9;
+  const FLOOR_THRESHOLD = 6;
 
-  // Mobile detection — used to scale burst counts
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
     || window.innerWidth < 768;
   const BURST_SCALE = IS_MOBILE ? 0.65 : 1.0;
@@ -69,7 +64,6 @@
   const scorchMarks = [];
   const shake       = { v:0, decay:0.87 };
 
-  // Hard particle caps
   const CAP = {
     sparks: IS_MOBILE ? 120 : 180,
     waves:  IS_MOBILE ? 20  : 30,
@@ -455,6 +449,57 @@
       col:'#9900ff', type:'ghost', grav:0, rot:0, rotV:0, decay:rnd(0.04,0.07), ri});
   }
 
+  // ── v4: Trait / resist helpers ───────────────────────
+  function hasTrait(block, trait) {
+    return Array.isArray(block.traits) && block.traits.includes(trait);
+  }
+
+  function getResist(block, power) {
+    return block.resist && typeof block.resist[power] === 'number'
+      ? block.resist[power]
+      : 1;
+  }
+
+  // Returns true if the hit/effect should be fully blocked.
+  // mode: 'hit' | 'burn' | 'freeze' | 'convert'
+  function powerBlocked(block, power, mode='hit') {
+    if (!block) return false;
+    if (mode === 'burn'    && hasTrait(block, 'burnimmune'))    return true;
+    if (mode === 'freeze'  && hasTrait(block, 'freezeimmune')) return true;
+    if (mode === 'convert' && hasTrait(block, 'convertimmune')) return true;
+
+    if (mode === 'hit') {
+      if (power === 'fire'      && hasTrait(block, 'fireproof'))     return true;
+      if (power === 'ultimate'  && hasTrait(block, 'ultimateproof')) return true;
+      if (power === 'ice'       && hasTrait(block, 'iceproof'))      return true;
+      if (power === 'heavy'     && hasTrait(block, 'heavyproof'))    return true;
+      if (power === 'rock'      && hasTrait(block, 'rockproof'))     return true;
+      if (power === 'rainbow'   && hasTrait(block, 'rainbowproof'))  return true;
+    }
+    return false;
+  }
+
+  // Returns a colour to tint the block border based on its dominant trait.
+  // Used by drawBlocks() for visual teaching.
+  function traitGlowColor(block) {
+    if (!block.traits || !block.traits.length) return null;
+    if (hasTrait(block, 'ultimateproof')) return '#ff00ff';
+    if (hasTrait(block, 'fireproof'))     return '#ff4400';
+    if (hasTrait(block, 'iceproof'))      return '#00ccff';
+    if (hasTrait(block, 'heavyproof'))    return '#ffaa00';
+    if (hasTrait(block, 'rockproof'))     return '#888888';
+    if (hasTrait(block, 'rainbowproof'))  return '#88ff44';
+    if (hasTrait(block, 'burnimmune'))    return '#ff6600';
+    if (hasTrait(block, 'freezeimmune')) return '#aaddff';
+    if (hasTrait(block, 'convertimmune')) return '#ccff88';
+    // Resist-only (no full immunity trait) — check resist map
+    if (block.resist) {
+      const keys = Object.keys(block.resist);
+      if (keys.length) return '#dddddd';
+    }
+    return null;
+  }
+
   // ── Death explosions ─────────────────────────────────
   function triggerDeathExplosion(b) {
     const x = b.x, y = b.y, power = b.power, ri = b.ri;
@@ -631,6 +676,8 @@
         gs.blocks.forEach((block, idx) => {
           if (block.broken) return;
           if (dist(x, y, block.x, block.y) > 320) return;
+          // v4: ultimate respects ultimateproof
+          if (powerBlocked(block, 'ultimate', 'hit')) return;
           const m = MAT[block.material] || MAT.wood;
           const cnt = ~~(rnd(8,18));
           for (let i = 0; i < cnt; i++) {
@@ -649,7 +696,7 @@
             };
             pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
           }
-          damageBlock(block, block.hp, block.x, block.y, 20, idx, false);
+          damageBlock(block, block.hp, block.x, block.y, 20, idx, false, 'ultimate');
         });
         gs.pct = (gs.brokenBlocks / gs.totalBlocks) * 100;
         const cnt2 = ~~(130 * scale);
@@ -724,7 +771,6 @@
 
   // ── Block x-range index ──────────────────────────────
   let blockXIndex = [];
-  // v3: dirty flag so we only rebuild once per frame, not once per break
   let blockIndexDirty = false;
   function markIndexDirty() { blockIndexDirty = true; }
   function buildBlockIndex() {
@@ -737,33 +783,18 @@
     if (blockIndexDirty) buildBlockIndex();
   }
 
-  // ── v3: Structural collapse ──────────────────────────
-  // A block is considered "floor-supported" when its bottom edge is within
-  // a small threshold of FLOOR_Y.
-  const FLOOR_THRESHOLD = 6; // px
-
-  // Returns true if `block` has solid support beneath it.
-  // Support = floor contact OR ≥ SUPPORT_OVERLAP horizontal overlap with a
-  // non-broken, non-falling block whose top edge aligns with this block's bottom.
+  // ── Structural collapse ──────────────────────────────
   function isBlockSupported(block, idx) {
-    // 1. Floor contact
     if (block.y + block.h / 2 >= FLOOR_Y - FLOOR_THRESHOLD) return true;
-
-    // 2. Another intact block directly below
-    const myLeft  = block.x - block.w / 2;
-    const myRight = block.x + block.w / 2;
+    const myLeft   = block.x - block.w / 2;
+    const myRight  = block.x + block.w / 2;
     const myBottom = block.y + block.h / 2;
-
     for (let i = 0; i < gs.blocks.length; i++) {
       if (i === idx) continue;
       const other = gs.blocks[i];
       if (other.broken || other.falling) continue;
-
       const otherTop = other.y - other.h / 2;
-      // Vertical alignment: other's top must be within a tolerance of this block's bottom
       if (Math.abs(otherTop - myBottom) > 16) continue;
-
-      // Horizontal overlap check
       const oLeft  = other.x - other.w / 2;
       const oRight = other.x + other.w / 2;
       const overlapLeft  = Math.max(myLeft,  oLeft);
@@ -775,9 +806,6 @@
     return false;
   }
 
-  // Run after any block breaks or a falling block lands.
-  // Marks newly unsupported blocks as falling. Iterates until stable
-  // (so a cascade where A supports B supports C all topples at once).
   function checkSupport() {
     let changed = true;
     while (changed) {
@@ -787,9 +815,8 @@
         if (block.broken || block.falling) continue;
         if (!isBlockSupported(block, i)) {
           block.falling = true;
-          block.vy = block.vy || 0; // keep any existing velocity
+          block.vy = block.vy || 0;
           changed = true;
-          // Small visual kick so the fall looks intentional, not a teleport
           spawnDust(block.x, block.y + block.h / 2);
           addShake(1.5);
         }
@@ -835,7 +862,6 @@
       if (c.life <= 0) confetti.splice(i, 1);
     }
 
-    // Damage confetti — x-range filter + hit-once
     for (let i = gs.damageConfetti.length - 1; i >= 0; i--) {
       const c = gs.damageConfetti[i];
       if (c.gravDelay !== undefined) {
@@ -862,7 +888,7 @@
           const block = gs.blocks[entry.idx];
           if (!block || block.broken) continue;
           if (dist(cx, c.y, block.x, block.y) < entry.halfW + cr) {
-            damageBlock(block, 1, cx, c.y, 5, entry.idx, false);
+            damageBlock(block, 1, cx, c.y, 5, entry.idx, false, null);
             c.hitOnce = true;
             break;
           }
@@ -959,7 +985,7 @@
     bst.stocks=ROSTER.map(b => b.stock);
     bst.sel=0;
     gs.ghostsLeft=bst.totalShots();
-    blockIndexDirty = false; // v3
+    blockIndexDirty = false;
   }
 
   function loadRound(idx) {
@@ -1018,7 +1044,7 @@
     };
   }
 
-  // v3: cloneBlock initialises falling:false
+  // v4: cloneBlock reads traits and resist from level def
   function cloneBlock(def, idx) {
     const y = typeof def.floorOffset==='number' ? FLOOR_Y-def.floorOffset : def.y;
     CRACKS.delete(idx);
@@ -1026,28 +1052,38 @@
       x:def.x, y, w:def.w, h:def.h, material:def.material||'wood',
       hp:def.hp||1, maxHp:def.hp||1,
       broken:false,
-      falling:false,   // v3: block is toppling due to lost support
+      falling:false,
       shake:0, vy:0, fallen:false, hitFlash:0,
       frozen:false, burning:false, burnTimer:0, ringCrack:false, compressY:0,
+      // v4: trait & resist system
+      traits: Array.isArray(def.traits) ? [...def.traits] : [],
+      resist: def.resist ? {...def.resist} : {},
     };
   }
 
   // ── Power helpers ────────────────────────────────────
   function applyFireBurn(block) {
     if (block.broken || block.burning) return;
+    // v4: burnimmune blocks can't be set on fire
+    if (powerBlocked(block, 'fire', 'burn')) return;
     block.burning=true; block.burnTimer=120;
   }
+
+  // v4: updateBurning checks burnimmune before ticking
   function updateBurning() {
     gs.blocks.forEach((block, idx) => {
       if (!block.burning || block.broken) return;
+      // Safety: if block somehow gained immunity after being set on fire
+      if (powerBlocked(block, 'fire', 'burn')) { block.burning=false; return; }
       block.burnTimer--;
       if (block.burnTimer%40===0 && block.hp>0) {
-        damageBlock(block, 1, block.x, block.y, 8, idx, false);
+        damageBlock(block, 1, block.x, block.y, 8, idx, false, 'fire');
         spawnEmber(block.x+rnd(-block.w/2,block.w/2), block.y-block.h/2);
       }
       if (block.burnTimer<=0) block.burning=false;
     });
   }
+
   function updateFrozen() {
     for (const [idx, frames] of gs.frozen.entries()) {
       if (frames<=0) {
@@ -1055,17 +1091,35 @@
         gs.frozen.delete(idx);
         if (block && !block.broken) {
           block.frozen=false;
-          damageBlock(block, block.hp, block.x, block.y, 18, idx, true);
+          damageBlock(block, block.hp, block.x, block.y, 18, idx, true, 'ice');
           spawnIce(block.x, block.y, block.w, block.h);
         }
       } else gs.frozen.set(idx, frames-1);
     }
   }
 
-  // ── Block damage ─────────────────────────────────────
-  function damageBlock(block, amount, hx, hy, spd, idx, doSFX=true) {
+  // ── v4: Block damage ─────────────────────────────────
+  // power param (string|null): the Booha power causing this damage.
+  // Checks powerBlocked() and applies resist scalar before dealing damage.
+  function damageBlock(block, amount, hx, hy, spd, idx, doSFX=true, power=null) {
     if (block.broken || block.frozen) return;
-    block.hp-=amount; block.shake=1; block.hitFlash=1;
+
+    // Check full immunity first
+    if (power && powerBlocked(block, power, 'hit')) {
+      // Show a "deflect" visual: white wave + brief flash on the block
+      spawnWave(hx, hy, '#ffffff', 26);
+      block.hitFlash = 0.35;
+      addShake(1.5);
+      return;
+    }
+
+    // Apply damage resistance (scalar 0–1 means less damage)
+    const resist = power ? getResist(block, power) : 1;
+    const actualAmount = amount * resist;
+    if (actualAmount <= 0) return;
+
+    block.hp -= actualAmount;
+    block.shake=1; block.hitFlash=1;
     const mat=block.material, m=MAT[mat]||MAT.wood;
     spawnSparks(hx, hy, mat, spd, ~~(6+spd*0.5));
     spawnWave(hx, hy, m.spark, 35+spd*2);
@@ -1083,14 +1137,12 @@
       addShake(Math.min(10, spd*0.6+4));
       if (doSFX) sndBreak();
       gs.debTimer=18;
-      // v3: dirty flag instead of immediate rebuild
       markIndexDirty();
-      // v3: check for blocks that have lost support
       checkSupport();
     }
   }
 
-  // ── Block collision ─────────────────────────────────
+  // ── v4: Block collision ─────────────────────────────
   function blockCollide(block, idx) {
     const b=gs.booha; if(!b||!b.launched||block.broken) return;
     if (b.tell) return;
@@ -1102,19 +1154,28 @@
     if (spd<MIN_IMPACT) return;
     sndHit(block.material, spd);
     const power=b.power;
-    if (power==='ice')      { spawnRingCrack(cx,cy); block.ringCrack=true; }
-    if (power==='fire')     { spawnScorch(cx,cy); }
-    if (power==='heavy')    { block.compressY=6; }
-    if (power==='princess') { b.impactCompress=1; b.impactCompressDir=Math.atan2(dy,dx); }
-    if (power==='nightmare'){ setTimeout(()=>sndHit(block.material,spd),160); }
-    if (power==='ice'&&!block.frozen) {
+
+    // v4: check immunity before applying special effects
+    const fireImmune    = powerBlocked(block, 'fire',    'hit');
+    const iceImmune     = powerBlocked(block, 'ice',     'hit') || powerBlocked(block, 'ice', 'freeze');
+    const rainbowImmune = powerBlocked(block, 'rainbow', 'hit') || powerBlocked(block, 'rainbow', 'convert');
+
+    if (power==='ice' && !iceImmune)      { spawnRingCrack(cx,cy); block.ringCrack=true; }
+    if (power==='fire' && !fireImmune)    { spawnScorch(cx,cy); }
+    if (power==='heavy')                  { block.compressY=6; }
+    if (power==='princess')               { b.impactCompress=1; b.impactCompressDir=Math.atan2(dy,dx); }
+    if (power==='nightmare')              { setTimeout(()=>sndHit(block.material,spd),160); }
+
+    if (power==='ice' && !iceImmune && !block.frozen) {
       block.frozen=true; gs.frozen.set(idx,90);
       spawnWave(cx,cy,'#aaeeff',50); spawnSparks(cx,cy,'ice',spd,10); addShake(4);
     }
-    if (power==='rainbow'&&block.material!=='glass') {
+
+    if (power==='rainbow' && !rainbowImmune && block.material!=='glass') {
       block.material='glass'; block.hp=1; block.maxHp=1;
       spawnWave(cx,cy,'#ff88ff',55);
     }
+
     if (power==='princess'&&!b.spawnedMinis) {
       b.spawnedMinis=true;
       for (let m=0;m<3;m++) {
@@ -1122,26 +1183,37 @@
         gs.minis.push({isMini:true, x:cx, y:cy, vx:Math.cos(ang)*rnd(8,14), vy:Math.sin(ang)*rnd(8,14)-rnd(3,6), radius:B_RADIUS*0.45, launched:true, life:1, ri:b.ri});
       }
     }
+
+    // v4: compute damage with power type for resist check
     let dmg=0;
     if      (power==='heavy')                    dmg=2;
     else if (power==='ice'||power==='rainbow')   dmg=0;
     else dmg = block.material==='stone'?(spd>11?1:0) : block.material==='glass'?1 : block.material==='soft'?(spd>5?1:0) : (spd>7?1:0);
-    if (dmg>0) damageBlock(block,dmg,cx,cy,spd,idx);
-    if (power==='fire') gs.blocks.forEach((blk,i)=>{if(!blk.broken&&dist(blk.x,blk.y,block.x,block.y)<120)applyFireBurn(blk);});
+    if (dmg>0) damageBlock(block,dmg,cx,cy,spd,idx,true,power);
+
+    // v4: fire spread also checks burnimmune on neighbours
+    if (power==='fire' && !fireImmune) {
+      gs.blocks.forEach((blk,i)=>{
+        if(!blk.broken && dist(blk.x,blk.y,block.x,block.y)<120) applyFireBurn(blk);
+      });
+    }
+
     if (power==='rock'&&!b.piercedOnce) { b.piercedOnce=true; return; }
     if (power==='monster') { gs.bounces++; b.radius=Math.min(b.baseRadius*(1+gs.bounces*0.22),B_RADIUS*2.8); }
+
     const nx=dx===0&&dy===0?1:dx/Math.sqrt(dsq||1), ny=dx===0&&dy===0?0:dy/Math.sqrt(dsq||1);
     const dot=b.vx*nx+b.vy*ny;
     b.vx=(b.vx-2*dot*nx)*BOUNCE; b.vy=(b.vy-2*dot*ny)*BOUNCE;
     if(Math.abs(dx)>Math.abs(dy)) b.x=cx+nx*(b.radius+1); else b.y=cy+ny*(b.radius+1);
   }
+
   function miniCollide(mini) {
     for (let i=0;i<gs.blocks.length;i++) {
       const block=gs.blocks[i]; if(block.broken)continue;
       const cx=clamp(mini.x,block.x-block.w/2,block.x+block.w/2);
       const cy=clamp(mini.y,block.y-block.h/2,block.y+block.h/2);
       if(dist(mini.x,mini.y,cx,cy)<mini.radius){
-        damageBlock(block,1,cx,cy,Math.hypot(mini.vx,mini.vy),i);
+        damageBlock(block,1,cx,cy,Math.hypot(mini.vx,mini.vy),i,true,null);
         const nx=(mini.x-cx)||1, ny=(mini.y-cy)||0, l=Math.hypot(nx,ny)||1;
         mini.vx=(mini.vx-2*(mini.vx*(nx/l)+mini.vy*(ny/l))*(nx/l))*0.65;
         mini.vy=(mini.vy-2*(mini.vx*(nx/l)+mini.vy*(ny/l))*(ny/l))*0.65;
@@ -1149,17 +1221,14 @@
     }
   }
 
-  // ── v3: updateBlocks — handles both broken and falling ──
+  // ── updateBlocks ─────────────────────────────────────
   function updateBlocks() {
-    // Flush the index dirty flag at the top of the frame
     flushBlockIndex();
-
     let anyFallingLanded = false;
 
     for (let i = 0; i < gs.blocks.length; i++) {
       const block = gs.blocks[i];
 
-      // ── Broken blocks (destroyed): keep falling through floor ──
       if (block.broken) {
         block.vy += GRAVITY * 0.6;
         block.y  += block.vy;
@@ -1175,18 +1244,15 @@
           block.vy *= -0.18;
         }
         block.vy *= 0.985;
-        // cosmetics
         if (block.compressY > 0) { block.compressY *= 0.7; if (block.compressY < 0.5) block.compressY = 0; }
         block.shake *= 0.84; block.hitFlash *= 0.88;
         continue;
       }
 
-      // ── Falling blocks (intact but unsupported): physics + land damage ──
       if (block.falling) {
         block.vy += GRAVITY;
         block.y  += block.vy;
 
-        // Check if it landed on the floor
         if (block.y + block.h / 2 >= FLOOR_Y) {
           block.y   = FLOOR_Y - block.h / 2;
           const spd = Math.abs(block.vy);
@@ -1200,14 +1266,11 @@
             addShake(Math.min(5, spd * 0.25));
             spawnSparks(block.x, FLOOR_Y, block.material, spd, 5);
           }
-
-          // Crush damage: if it hit hard enough, damage the block itself
           if (spd >= FALL_CRUSH_SPEED) {
             const crushDmg = spd >= FALL_CRUSH_SPEED * 1.8 ? 2 : 1;
-            damageBlock(block, crushDmg, block.x, block.y, spd, i, true);
+            damageBlock(block, crushDmg, block.x, block.y, spd, i, true, null);
           }
         } else {
-          // Mid-air: check if it landed on top of another intact block
           for (let j = 0; j < gs.blocks.length; j++) {
             if (i === j) continue;
             const other = gs.blocks[j];
@@ -1216,9 +1279,7 @@
             const otherTop    = other.y - other.h / 2;
             const blockBottom = block.y + block.h / 2;
 
-            // Close enough vertically?
             if (blockBottom >= otherTop && blockBottom <= otherTop + block.vy + 2) {
-              // Horizontal overlap?
               const overlapL = Math.max(block.x - block.w/2, other.x - other.w/2);
               const overlapR = Math.min(block.x + block.w/2, other.x + other.w/2);
               if (overlapR - overlapL > block.w * SUPPORT_OVERLAP) {
@@ -1233,11 +1294,9 @@
                   spawnDust(block.x, otherTop);
                   addShake(Math.min(4, spd * 0.2));
                 }
-
-                // Transfer crush damage to the block below
                 if (spd >= FALL_CRUSH_SPEED) {
                   const crushDmg = spd >= FALL_CRUSH_SPEED * 1.8 ? 2 : 1;
-                  damageBlock(other, crushDmg, other.x, other.y, spd, j, true);
+                  damageBlock(other, crushDmg, other.x, other.y, spd, j, true, null);
                 }
                 break;
               }
@@ -1246,15 +1305,11 @@
         }
       }
 
-      // Cosmetic updates for all non-broken blocks
       if (block.compressY > 0) { block.compressY *= 0.7; if (block.compressY < 0.5) block.compressY = 0; }
       block.shake   *= 0.84;
       block.hitFlash *= 0.88;
     }
 
-    // If any falling block just landed, re-run support check
-    // (the landed block might now support something, or its crush damage
-    // might have removed support from something else)
     if (anyFallingLanded) {
       markIndexDirty();
       checkSupport();
@@ -1353,7 +1408,13 @@
         }
         if(b.power==='ultimate'&&!b.confettiFired){
           b.confettiFired=true; initTell(b); spawnDetonation(b.x,b.y);
-          gs.blocks.forEach((block,i)=>{if(!block.broken&&dist(b.x,b.y,block.x,block.y)<280)damageBlock(block,block.hp,block.x,block.y,20,i,false);});
+          gs.blocks.forEach((block,i)=>{
+            if(!block.broken&&dist(b.x,b.y,block.x,block.y)<280) {
+              // v4: ultimate settl check respects ultimateproof
+              if(!powerBlocked(block,'ultimate','hit'))
+                damageBlock(block,block.hp,block.x,block.y,20,i,false,'ultimate');
+            }
+          });
           gs.pct=(gs.brokenBlocks/gs.totalBlocks)*100;
         }
       }
@@ -1593,7 +1654,7 @@
     }
   }
 
-  // v3: drawBlocks — falling blocks render with a slight tilt for visual flair
+  // v4: drawBlocks — adds trait glow border on immune/resistant blocks
   function drawBlocks(){
     for(let i=0;i<gs.blocks.length;i++){
       const block=gs.blocks[i];
@@ -1607,9 +1668,7 @@
       ctx.globalAlpha = block.broken ? 0.28 : (block.falling ? 0.88 : 1);
       ctx.translate(sx, sy);
 
-      // v3: apply a small rotation to falling-but-intact blocks
       if (block.falling) {
-        // Tilt grows with speed, capped at ~15°
         const tilt = clamp(block.vy * 0.012, -0.26, 0.26);
         ctx.translate(block.x, block.y);
         ctx.rotate(tilt);
@@ -1639,6 +1698,23 @@
       }
       if(block.hitFlash>0){ctx.fillStyle=`rgba(255,255,255,${0.42*block.hitFlash})`;rr(ctx,bx,by,bw,bh,8,true,false);}
       ctx.strokeStyle='rgba(0,0,0,0.25)';ctx.lineWidth=1.5;rr(ctx,bx+1.5,by+1.5,bw-3,bh-3,7,false,true);
+
+      // v4: trait glow — pulsing coloured border signals immunity to player
+      if (!block.broken) {
+        const glowCol = traitGlowColor(block);
+        if (glowCol) {
+          const pulse = 0.45 + 0.35 * Math.sin(performance.now() * 0.004 + i);
+          ctx.save();
+          ctx.globalAlpha = pulse * 0.72;
+          ctx.strokeStyle = glowCol;
+          ctx.lineWidth = 3.5;
+          ctx.shadowColor = glowCol;
+          ctx.shadowBlur = 8;
+          rr(ctx, bx - 1, by - 1, bw + 2, bh + 2, 9, false, true);
+          ctx.restore();
+        }
+      }
+
       ctx.restore();
       if(!block.broken)drawCracks(block,i);
     }
@@ -1833,7 +1909,7 @@
     gs.scale=scale;
   }
 
-  // ── Help modal (DOM overlay) ─────────────────────────
+  // ── Help modal ───────────────────────────────────────
   let helpOpen = false;
   let helpIdx  = 0;
   let helpEl   = null;
