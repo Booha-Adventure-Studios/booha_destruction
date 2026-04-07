@@ -44,137 +44,360 @@ window.BOOHA_DESTRUCTION_LEVELS = [
   No traits. Learn physics, Booha powers, basic collapse.
 ============================================================ */
 
-/* 1 — First Shot */
+/* 1 — First Shot (JUICED) */
 {
-  id: 1, name: "First Shot",
+  id: 1, name: "First Shot+",
   targetPercent: 100,
   blocks: [
+
+    // ── MAIN CORE (original idea preserved) ──
     { x:960, y:620, w:90, h:40, material:'wood', hp:1 },
     { x:960, y:572, w:90, h:40, material:'wood', hp:1 },
     { x:960, y:524, w:90, h:40, material:'wood', hp:1 },
+
+    // ── TOP CAP (anti-fire wipe) ──
+    { x:960, y:480, w:120, h:24, material:'stone', hp:2,
+      traits:['burnimmune'] },
+
+    // ── BACK SPINE (anti-ultimate cheese) ──
+    { x:1040, y:620, w:40, h:200, material:'stone', hp:2,
+      traits:['ultimateproof'] },
+
+    // ── FRONT BOUNCE JUNK ──
+    { x:820, y:620, w:80, h:36, material:'soft', hp:1 },
+    { x:820, y:576, w:80, h:36, material:'soft', hp:1 },
+    { x:860, y:540, w:24, h:80, material:'glass', hp:1 },
+
+    // ── RIGHT MINI TOWER (extra bounce + distraction) ──
+    { x:1100, y:620, w:70, h:40, material:'wood', hp:1 },
+    { x:1100, y:572, w:24, h:88, material:'glass', hp:1 },
+    { x:1100, y:520, w:90, h:40, material:'soft', hp:1 },
+
+    // ── LEFT MINI TOWER (asymmetry for ricochet) ──
+    { x:740, y:620, w:70, h:40, material:'wood', hp:1 },
+    { x:740, y:572, w:24, h:88, material:'glass', hp:1 },
+    { x:740, y:520, w:90, h:40, material:'soft', hp:1 },
+
+    // ── FLOATING CHAOS LAYER ──
+    { x:900, y:440, w:80, h:30, material:'wood', hp:1 },
+    { x:1020, y:420, w:80, h:30, material:'glass', hp:1 },
+    { x:840, y:400, w:80, h:30, material:'wood', hp:1 },
+
   ]
 },
 
-/* 2 — Glass Aware */
+/* 2 — Glass Aware (JUICED) */
 {
-  id: 2, name: "Glass Aware",
+  id: 2, name: "Glass Aware+",
   targetPercent: 100,
   blocks: [
+    // main structure
     { x:920, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:1020, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:920, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:1020, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:970, y:512, w:180, h:24, material:'wood', hp:1 },
+
+    // anti-fire cap
+    { x:970, y:474, w:210, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // anti-ultimate rear blocker
+    { x:1088, y:590, w:34, h:170, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // left bounce pile
+    { x:780, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:780, y:578, w:72, h:36, material:'soft', hp:1 },
+    { x:816, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // right mini tower
+    { x:1150, y:620, w:70, h:36, material:'wood', hp:1 },
+    { x:1150, y:578, w:70, h:36, material:'soft', hp:1 },
+    { x:1150, y:538, w:24, h:78, material:'glass', hp:1 },
+
+    // floating junk
+    { x:880, y:436, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:418, w:70, h:28, material:'glass', hp:1 },
+    { x:965, y:394, w:110, h:24, material:'wood', hp:1 },
   ]
 },
 
-/* 3 — Glass Core */
+/* 3 — Glass Core (JUICED) */
 {
-  id: 3, name: "Glass Core",
+  id: 3, name: "Glass Core+",
   targetPercent: 100,
   blocks: [
+    // main structure
     { x:890, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1050, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:970, y:620, w:120, h:40, material:'glass', hp:1 },
     { x:970, y:572, w:80, h:40, material:'wood', hp:1 },
     { x:970, y:524, w:80, h:40, material:'wood', hp:1 },
+
+    // anti-fire top
+    { x:970, y:480, w:140, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1062, y:586, w:34, h:180, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side junk
+    { x:760, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:760, y:578, w:76, h:36, material:'wood', hp:1 },
+    { x:1180, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:1180, y:578, w:76, h:36, material:'wood', hp:1 },
+
+    // side glass stabs
+    { x:840, y:560, w:24, h:88, material:'glass', hp:1 },
+    { x:1100, y:548, w:24, h:88, material:'glass', hp:1 },
+
+    // floating chaos
+    { x:910, y:432, w:70, h:30, material:'wood', hp:1 },
+    { x:1030, y:408, w:70, h:30, material:'glass', hp:1 },
+    { x:970, y:382, w:120, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 4 — Meet Heavy */
+/* 4 — Meet Heavy (JUICED) */
 {
-  id: 4, name: "Meet Heavy",
+  id: 4, name: "Meet Heavy+",
   targetPercent: 100,
   blocks: [
+    // core
     { x:860, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1060, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:572, w:280, h:24, material:'stone', hp:2 },
     { x:960, y:536, w:120, h:48, material:'wood', hp:1 },
+
+    // anti-fire top
+    { x:960, y:488, w:160, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // anti-ultimate rear wall
+    { x:1120, y:592, w:36, h:170, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // left bounce pocket
+    { x:730, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:730, y:578, w:72, h:36, material:'soft', hp:1 },
+    { x:770, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // right side tower
+    { x:1210, y:620, w:76, h:36, material:'wood', hp:1 },
+    { x:1210, y:580, w:76, h:36, material:'soft', hp:1 },
+    { x:1210, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // floating blocks
+    { x:860, y:444, w:80, h:28, material:'wood', hp:1 },
+    { x:1060, y:426, w:80, h:28, material:'wood', hp:1 },
+    { x:960, y:392, w:130, h:24, material:'stone', hp:2 },
   ]
 },
 
-/* 5 — Spread Shot */
+/* 5 — Spread Shot (JUICED) */
 {
-  id: 5, name: "Spread Shot",
+  id: 5, name: "Spread Shot+",
   targetPercent: 100,
   blocks: [
+    // main spread targets
     { x:840, y:620, w:100, h:36, material:'soft', hp:1 },
     { x:960, y:620, w:100, h:36, material:'soft', hp:1 },
     { x:1080, y:620, w:100, h:36, material:'soft', hp:1 },
     { x:840, y:576, w:100, h:36, material:'soft', hp:1 },
     { x:1080, y:576, w:100, h:36, material:'soft', hp:1 },
+
+    // center layer
+    { x:960, y:570, w:120, h:24, material:'wood', hp:1 },
+
+    // top anti-fire plate
+    { x:960, y:524, w:160, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear spine
+    { x:1120, y:590, w:34, h:170, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // extra spread junk
+    { x:730, y:620, w:78, h:36, material:'soft', hp:1 },
+    { x:1190, y:620, w:78, h:36, material:'soft', hp:1 },
+    { x:760, y:574, w:24, h:78, material:'glass', hp:1 },
+    { x:1220, y:574, w:24, h:78, material:'glass', hp:1 },
+
+    // mid-air splash surfaces
+    { x:880, y:454, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:454, w:70, h:28, material:'wood', hp:1 },
+    { x:960, y:420, w:140, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 6 — Tall Glass Tower */
+/* 6 — Tall Glass Tower (JUICED) */
 {
-  id: 6, name: "Tall Glass Tower",
+  id: 6, name: "Tall Glass Tower+",
   targetPercent: 100,
   blocks: [
+    // core
     { x:960, y:620, w:60, h:40, material:'stone', hp:2 },
     { x:960, y:572, w:24, h:88, material:'glass', hp:1 },
     { x:960, y:472, w:24, h:88, material:'glass', hp:1 },
     { x:960, y:424, w:80, h:40, material:'wood', hp:1 },
     { x:870, y:620, w:60, h:40, material:'wood', hp:1 },
     { x:1050, y:620, w:60, h:40, material:'wood', hp:1 },
+
+    // top fire cap
+    { x:960, y:382, w:120, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1038, y:560, w:32, h:210, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // support clutter
+    { x:790, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1130, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:790, y:580, w:72, h:36, material:'wood', hp:1 },
+    { x:1130, y:580, w:72, h:36, material:'wood', hp:1 },
+
+    // side ricochet panels
+    { x:840, y:520, w:24, h:82, material:'glass', hp:1 },
+    { x:1080, y:520, w:24, h:82, material:'glass', hp:1 },
+
+    // floating stuff
+    { x:890, y:340, w:70, h:28, material:'wood', hp:1 },
+    { x:1030, y:322, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 7 — First Choice */
+/* 7 — First Choice (JUICED) */
 {
-  id: 7, name: "First Choice",
+  id: 7, name: "First Choice+",
   targetPercent: 100,
   blocks: [
+    // left path
     { x:860, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:860, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:860, y:500, w:100, h:40, material:'wood', hp:1 },
+
+    // right path
     { x:1060, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1060, y:572, w:80, h:40, material:'stone', hp:2 },
     { x:1060, y:524, w:80, h:40, material:'stone', hp:2 },
+
+    // anti-fire protection
+    { x:860, y:456, w:130, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+    { x:1060, y:478, w:120, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // anti-ultimate rear blocker behind right tower
+    { x:1122, y:586, w:34, h:178, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // center mess
+    { x:960, y:620, w:90, h:36, material:'soft', hp:1 },
+    { x:960, y:578, w:90, h:36, material:'wood', hp:1 },
+    { x:960, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // far left junk
+    { x:720, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:720, y:580, w:74, h:36, material:'wood', hp:1 },
+
+    // floating choice clutter
+    { x:930, y:404, w:70, h:28, material:'glass', hp:1 },
+    { x:1090, y:390, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 8 — Offset Tower */
+/* 8 — Offset Tower (JUICED) */
 {
-  id: 8, name: "Offset Tower",
+  id: 8, name: "Offset Tower+",
   targetPercent: 100,
   blocks: [
+    // original offset idea
     { x:920, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:572, w:80, h:40, material:'wood', hp:1 },
     { x:1000, y:524, w:80, h:40, material:'glass', hp:1 },
     { x:1040, y:476, w:80, h:40, material:'wood', hp:1 },
     { x:1040, y:428, w:80, h:40, material:'soft', hp:1 },
+
+    // top cap
+    { x:1040, y:382, w:130, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear ultimate stopper
+    { x:1108, y:540, w:34, h:200, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // extra offset junk to make ricochets fun
+    { x:790, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:840, y:578, w:76, h:36, material:'wood', hp:1 },
+    { x:890, y:538, w:24, h:78, material:'glass', hp:1 },
+
+    { x:1180, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1220, y:576, w:72, h:36, material:'wood', hp:1 },
+
+    // overhead clutter
+    { x:930, y:350, w:70, h:28, material:'wood', hp:1 },
+    { x:1080, y:330, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 9 — Bounce Intro */
+/* 9 — Bounce Intro (JUICED) */
 {
-  id: 9, name: "Bounce Intro",
+  id: 9, name: "Bounce Intro+",
   targetPercent: 100,
   blocks: [
+    // main
     { x:960, y:620, w:200, h:30, material:'stone', hp:2 },
     { x:870, y:582, w:60, h:40, material:'wood', hp:1 },
     { x:1050, y:582, w:60, h:40, material:'wood', hp:1 },
     { x:960, y:570, w:80, h:24, material:'glass', hp:1 },
     { x:960, y:530, w:120, h:40, material:'wood', hp:1 },
+
+    // anti-fire cap
+    { x:960, y:486, w:150, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // anti-ultimate wall
+    { x:1088, y:586, w:34, h:174, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // left bounce stack
+    { x:760, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:760, y:580, w:76, h:36, material:'wood', hp:1 },
+    { x:800, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // right bounce stack
+    { x:1170, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:1170, y:580, w:76, h:36, material:'wood', hp:1 },
+    { x:1170, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // floating bounce bait
+    { x:900, y:434, w:70, h:28, material:'wood', hp:1 },
+    { x:1020, y:412, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:386, w:120, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 10 — False Base */
+/* 10 — False Base (JUICED) */
 {
-  id: 10, name: "False Base",
+  id: 10, name: "False Base+",
   targetPercent: 100,
   blocks: [
+    // original core
     { x:960, y:620, w:160, h:30, material:'stone', hp:2 },
     { x:960, y:582, w:80, h:40, material:'glass', hp:1 },
     { x:960, y:534, w:200, h:24, material:'wood', hp:1 },
     { x:900, y:494, w:60, h:40, material:'wood', hp:1 },
     { x:1020, y:494, w:60, h:40, material:'wood', hp:1 },
     { x:960, y:446, w:120, h:40, material:'soft', hp:1 },
+
+    // top blocker
+    { x:960, y:398, w:160, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear ultimate blocker
+    { x:1078, y:586, w:34, h:182, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side junk piles
+    { x:780, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:780, y:580, w:72, h:36, material:'wood', hp:1 },
+    { x:820, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    { x:1160, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1160, y:580, w:72, h:36, material:'wood', hp:1 },
+    { x:1160, y:540, w:24, h:78, material:'glass', hp:1 },
+
+    // fake upper clutter
+    { x:870, y:352, w:70, h:28, material:'wood', hp:1 },
+    { x:1050, y:334, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:312, w:130, h:24, material:'wood', hp:1 },
   ]
 },
-
 /* ============================================================
   ZONE 2 — FIRST TRAITS (Rounds 11–20)
   One or two immune blocks introduced per round.
