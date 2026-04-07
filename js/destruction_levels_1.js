@@ -785,10 +785,12 @@ window.BOOHA_DESTRUCTION_LEVELS = [
    Inner two blocks: fireproof + burnimmune.
    Fire Booha is useless here — must use Heavy.
    Teaches: identify the immune core, save Fire for other rounds. */
+/* 21 — Fireproof Core (JUICED) */
 {
-  id: 21, name: "Fireproof Core",
+  id: 21, name: "Fireproof Core+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1050, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:620, w:80, h:40, material:'stone', hp:2,
@@ -799,17 +801,36 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:1050, y:572, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:524, w:280, h:24, material:'wood', hp:1 },
     { x:960, y:476, w:120, h:40, material:'soft', hp:1 },
+
+    // top cap
+    { x:960, y:430, w:220, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1088, y:584, w:36, h:190, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // left bounce cluster
+    { x:740, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:740, y:580, w:76, h:36, material:'wood', hp:1 },
+    { x:780, y:540, w:24, h:82, material:'glass', hp:1 },
+
+    // right bounce cluster
+    { x:1190, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:1190, y:580, w:76, h:36, material:'wood', hp:1 },
+    { x:1190, y:540, w:24, h:82, material:'glass', hp:1 },
+
+    // floating clutter
+    { x:900, y:382, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:364, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:336, w:140, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 22 — Iceproof Anchor Tower
-   Bottom two stones are iceproof — Ice can't freeze the base.
-   But the TOP stone is normal — freeze it → everything collapses.
-   Teaches: find the one block that isn't immune. Top-down angle. */
+/* 22 — Iceproof Base (JUICED) */
 {
-  id: 22, name: "Iceproof Base",
+  id: 22, name: "Iceproof Base+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:960, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune'] },
     { x:960, y:572, w:80, h:40, material:'stone', hp:2,
@@ -819,17 +840,35 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:1050, y:580, w:60, h:80, material:'wood', hp:1 },
     { x:870, y:476, w:260, h:24, material:'wood', hp:1 },
     { x:960, y:428, w:100, h:40, material:'soft', hp:1 },
+
+    // top control
+    { x:960, y:382, w:180, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1028, y:556, w:32, h:220, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side junk
+    { x:760, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:1180, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:760, y:582, w:74, h:36, material:'wood', hp:1 },
+    { x:1180, y:582, w:74, h:36, material:'wood', hp:1 },
+
+    // extra ricochet glass
+    { x:820, y:520, w:24, h:82, material:'glass', hp:1 },
+    { x:1140, y:520, w:24, h:82, material:'glass', hp:1 },
+
+    // upper clutter
+    { x:900, y:334, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:314, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 23 — Convertimmune Tower
-   Rainbow Booha can't convert the stone blocks (convertimmune).
-   But it CAN convert the wood cap → one Normal shot clears it.
-   Teaches: Rainbow has limits. Aim at the wood, skip the stone. */
+/* 23 — Convertimmune Tower (JUICED) */
 {
-  id: 23, name: "Convertimmune Tower",
+  id: 23, name: "Convertimmune Tower+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['rainbowproof','convertimmune'] },
     { x:1050, y:620, w:80, h:40, material:'stone', hp:2,
@@ -841,18 +880,35 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:910, y:536, w:80, h:40, material:'wood', hp:1 },
     { x:1010, y:536, w:80, h:40, material:'wood', hp:1 },
     { x:960, y:488, w:140, h:40, material:'wood', hp:1 },
+
+    // top cap
+    { x:960, y:442, w:180, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1084, y:584, w:36, h:188, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side piles
+    { x:740, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:740, y:580, w:76, h:36, material:'wood', hp:1 },
+    { x:1200, y:620, w:76, h:36, material:'soft', hp:1 },
+    { x:1200, y:580, w:76, h:36, material:'wood', hp:1 },
+
+    // glass side stabs
+    { x:830, y:536, w:24, h:82, material:'glass', hp:1 },
+    { x:1110, y:536, w:24, h:82, material:'glass', hp:1 },
+
+    // floating clutter
+    { x:900, y:394, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:374, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 24 — Mixed Proof Tower
-   Left support: fireproof stone — must use Heavy or Normal.
-   Right support: iceproof stone — must use Heavy or Normal.
-   Glass bridge: normal — any Booha works.
-   Teaches: read each block's immunity separately. */
+/* 24 — Mixed Proof Tower (JUICED) */
 {
-  id: 24, name: "Mixed Proof Tower",
+  id: 24, name: "Mixed Proof Tower+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:80, h:120, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
     { x:1050, y:620, w:80, h:120, material:'stone', hp:2,
@@ -861,18 +917,35 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:900, y:536, w:80, h:40, material:'wood', hp:1 },
     { x:1020, y:536, w:80, h:40, material:'wood', hp:1 },
     { x:960, y:488, w:180, h:40, material:'soft', hp:1 },
+
+    // top cap
+    { x:960, y:442, w:220, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker behind right pillar
+    { x:1092, y:556, w:34, h:212, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side junk
+    { x:740, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:740, y:580, w:72, h:36, material:'wood', hp:1 },
+    { x:1180, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1180, y:580, w:72, h:36, material:'wood', hp:1 },
+
+    // extra bounce glass
+    { x:820, y:528, w:24, h:84, material:'glass', hp:1 },
+    { x:1140, y:528, w:24, h:84, material:'glass', hp:1 },
+
+    // upper clutter
+    { x:900, y:388, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:370, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 25 — Ultimateproof Anchor
-   Bottom center: ultimateproof stone — Ultimate's blast skips it.
-   Everything ABOVE it: normal wood/glass — Ultimate wrecks them.
-   To clear the bottom, need Heavy after Ultimate fires.
-   Teaches: Ultimate isn't a full-board clear. Plan the follow-up. */
+/* 25 — Ultimateproof Anchor (JUICED) */
 {
-  id: 25, name: "Ultimateproof Anchor",
-  targetPercent: 90,  // 90% — ultimateproof block counts as 10%
+  id: 25, name: "Ultimateproof Anchor+",
+  targetPercent: 90,
   blocks: [
+    // core lesson
     { x:840, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['ultimateproof'] },
@@ -883,43 +956,72 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:1040, y:536, w:80, h:40, material:'glass', hp:1 },
     { x:960, y:488, w:200, h:40, material:'soft', hp:1 },
     { x:960, y:440, w:140, h:40, material:'wood', hp:1 },
+
+    // top control
+    { x:960, y:394, w:200, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // extra rear blocker
+    { x:1098, y:584, w:34, h:192, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side junk towers
+    { x:720, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:720, y:580, w:72, h:36, material:'wood', hp:1 },
+    { x:1220, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1220, y:580, w:72, h:36, material:'wood', hp:1 },
+
+    // ricochet bait
+    { x:810, y:534, w:24, h:82, material:'glass', hp:1 },
+    { x:1150, y:534, w:24, h:82, material:'glass', hp:1 },
+
+    // upper clutter
+    { x:900, y:346, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:328, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 26 — Resist Wall (not immune, just tough)
-   Fire resist:0.25 on all stone — Fire deals quarter damage.
-   Not impossible, just wasteful. Heavy is 4x more efficient here.
-   Teaches: resist ≠ immune. Glows dimly. Still hurts, just less. */
+/* 26 — Resist Wall (JUICED) */
 {
-  id: 26, name: "Resist Wall",
+  id: 26, name: "Resist Wall+",
   targetPercent: 100,
   blocks: [
-    { x:870, y:620, w:80, h:40, material:'stone', hp:2,
-      resist:{fire:0.25} },
-    { x:960, y:620, w:80, h:40, material:'stone', hp:2,
-      resist:{fire:0.25} },
-    { x:1050, y:620, w:80, h:40, material:'stone', hp:2,
-      resist:{fire:0.25} },
-    { x:870, y:572, w:80, h:40, material:'stone', hp:2,
-      resist:{fire:0.25} },
-    { x:960, y:572, w:80, h:40, material:'stone', hp:2,
-      resist:{fire:0.25} },
-    { x:1050, y:572, w:80, h:40, material:'stone', hp:2,
-      resist:{fire:0.25} },
+    // core lesson
+    { x:870, y:620, w:80, h:40, material:'stone', hp:2, resist:{fire:0.25} },
+    { x:960, y:620, w:80, h:40, material:'stone', hp:2, resist:{fire:0.25} },
+    { x:1050, y:620, w:80, h:40, material:'stone', hp:2, resist:{fire:0.25} },
+    { x:870, y:572, w:80, h:40, material:'stone', hp:2, resist:{fire:0.25} },
+    { x:960, y:572, w:80, h:40, material:'stone', hp:2, resist:{fire:0.25} },
+    { x:1050, y:572, w:80, h:40, material:'stone', hp:2, resist:{fire:0.25} },
     { x:960, y:524, w:280, h:24, material:'wood', hp:1 },
     { x:960, y:476, w:100, h:40, material:'soft', hp:1 },
+
+    // top cap
+    { x:960, y:432, w:190, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1088, y:584, w:34, h:190, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side clutter
+    { x:740, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:740, y:580, w:74, h:36, material:'wood', hp:1 },
+    { x:1190, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:1190, y:580, w:74, h:36, material:'wood', hp:1 },
+
+    // side glass bait
+    { x:830, y:536, w:24, h:84, material:'glass', hp:1 },
+    { x:1110, y:536, w:24, h:84, material:'glass', hp:1 },
+
+    // upper clutter
+    { x:900, y:384, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:364, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 27 — Puzzle Tower
-   Outer stone: fireproof (red glow) — Fire bounces off.
-   Inner wood stack: normal — Fire burns it happily.
-   Must pick the right entry point. Direct Fire to center gap.
-   Teaches: fireproof is directional — aim around the glowing blocks. */
+/* 27 — Puzzle Tower (JUICED) */
 {
-  id: 27, name: "Puzzle Tower",
+  id: 27, name: "Puzzle Tower+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:70, h:200, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
     { x:1050, y:620, w:70, h:200, material:'stone', hp:2,
@@ -929,14 +1031,35 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:960, y:524, w:100, h:40, material:'wood', hp:1 },
     { x:960, y:476, w:100, h:40, material:'wood', hp:1 },
     { x:960, y:428, w:120, h:40, material:'soft', hp:1 },
+
+    // top plate
+    { x:960, y:382, w:170, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1090, y:556, w:34, h:214, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // outer clutter
+    { x:720, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:720, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1210, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1210, y:582, w:72, h:36, material:'wood', hp:1 },
+
+    // front ricochet bait
+    { x:800, y:540, w:24, h:82, material:'glass', hp:1 },
+    { x:1140, y:540, w:24, h:82, material:'glass', hp:1 },
+
+    // floating chaos
+    { x:900, y:336, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:318, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 28 — Bounce Scaling (no traits) */
+/* 28 — Bounce Scaling (JUICED) */
 {
-  id: 28, name: "Bounce Scaling",
+  id: 28, name: "Bounce Scaling+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:960, y:620, w:360, h:28, material:'stone', hp:2 },
     { x:840, y:580, w:70, h:40, material:'wood', hp:1 },
     { x:920, y:580, w:70, h:40, material:'stone', hp:2 },
@@ -945,14 +1068,36 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:880, y:532, w:160, h:24, material:'wood', hp:1 },
     { x:1040, y:532, w:160, h:24, material:'wood', hp:1 },
     { x:960, y:484, w:200, h:40, material:'soft', hp:1 },
+
+    // anti-fire top
+    { x:960, y:438, w:230, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1118, y:584, w:34, h:186, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // far side junk
+    { x:700, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:700, y:580, w:74, h:36, material:'wood', hp:1 },
+    { x:1240, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:1240, y:580, w:74, h:36, material:'wood', hp:1 },
+
+    // side glass panels
+    { x:790, y:532, w:24, h:82, material:'glass', hp:1 },
+    { x:1150, y:532, w:24, h:82, material:'glass', hp:1 },
+
+    // overhead clutter
+    { x:880, y:390, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:370, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:344, w:140, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 29 — Center Blast Setup (no traits) */
+/* 29 — Center Blast (JUICED) */
 {
-  id: 29, name: "Center Blast",
+  id: 29, name: "Center Blast+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:820, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:920, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1020, y:620, w:80, h:40, material:'stone', hp:2 },
@@ -963,36 +1108,78 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:870, y:524, w:80, h:40, material:'wood', hp:1 },
     { x:1070, y:524, w:80, h:40, material:'wood', hp:1 },
     { x:970, y:524, w:80, h:40, material:'soft', hp:1 },
+
+    // top control
+    { x:970, y:478, w:180, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1098, y:584, w:34, h:190, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // outer clutter
+    { x:700, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:700, y:580, w:72, h:36, material:'wood', hp:1 },
+    { x:1240, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1240, y:580, w:72, h:36, material:'wood', hp:1 },
+
+    // glass ricochet bait
+    { x:790, y:540, w:24, h:82, material:'glass', hp:1 },
+    { x:1160, y:540, w:24, h:82, material:'glass', hp:1 },
+
+    // upper clutter
+    { x:900, y:392, w:70, h:28, material:'wood', hp:1 },
+    { x:1045, y:374, w:70, h:28, material:'glass', hp:1 },
+    { x:970, y:346, w:150, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 30 — Three-Zone Mixed Traits
-   Left: fireproof+burnimmune stone (red glow) → needs Heavy/Normal
-   Center: soft blocks, no traits → Princess clears them
-   Right: iceproof stone (cyan glow) → needs Heavy/Rock/Normal
-   Teaches: read each zone, pick the right Booha per target. */
+/* 30 — Three-Zone Traits (JUICED) */
 {
-  id: 30, name: "Three-Zone Traits",
+  id: 30, name: "Three-Zone Traits+",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:840, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
     { x:840, y:572, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
     { x:840, y:524, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
+
     { x:960, y:620, w:90, h:36, material:'soft', hp:1 },
     { x:960, y:576, w:90, h:36, material:'soft', hp:1 },
     { x:960, y:532, w:90, h:36, material:'soft', hp:1 },
+
     { x:1080, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune'] },
     { x:1080, y:572, w:80, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune'] },
     { x:1080, y:524, w:80, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune'] },
+
+    // cross-top control
+    { x:960, y:478, w:360, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker behind right zone
+    { x:1118, y:584, w:34, h:188, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // extra left clutter
+    { x:700, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:700, y:580, w:72, h:36, material:'wood', hp:1 },
+
+    // extra right clutter
+    { x:1240, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1240, y:580, w:72, h:36, material:'wood', hp:1 },
+
+    // middle bounce bait
+    { x:900, y:440, w:70, h:28, material:'wood', hp:1 },
+    { x:1020, y:420, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:392, w:150, h:24, material:'soft', hp:1 },
+
+    // side glass teeth
+    { x:780, y:538, w:24, h:82, material:'glass', hp:1 },
+    { x:1180, y:538, w:24, h:82, material:'glass', hp:1 },
   ]
 },
-
 /* ============================================================
   ZONE 4 — MULTI-STEP + TRAITS (Rounds 31–40)
   Collapse sequencing AND immune blocks. Both required.
