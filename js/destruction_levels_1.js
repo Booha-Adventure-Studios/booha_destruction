@@ -1584,38 +1584,65 @@ window.BOOHA_DESTRUCTION_LEVELS = [
   Planning required. Second attempts are execution.
 ============================================================ */
 
-/* 41 — Three Stack System (no traits — pure collapse) */
+/* 41 — Three Stack System (EXTRA JUICY) */
 {
-  id: 41, name: "Three Stack System",
+  id: 41, name: "Three Stack System++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:840, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:840, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:840, y:500, w:100, h:40, material:'stone', hp:2 },
+
     { x:960, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:572, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:524, w:80, h:40, material:'stone', hp:2 },
+
     { x:1080, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:1080, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:1080, y:500, w:100, h:40, material:'stone', hp:2 },
+
     { x:960, y:476, w:300, h:24, material:'wood', hp:1 },
     { x:960, y:428, w:140, h:40, material:'soft', hp:1 },
+
+    // fire control
+    { x:960, y:382, w:220, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // backside anti-ultimate spine
+    { x:1126, y:548, w:38, h:238, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // extra side systems
+    { x:690, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:690, y:582, w:74, h:36, material:'wood', hp:1 },
+    { x:730, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:730, y:496, w:72, h:32, material:'wood', hp:1 },
+
+    { x:1250, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:1250, y:582, w:74, h:36, material:'wood', hp:1 },
+    { x:1250, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:1210, y:496, w:72, h:32, material:'wood', hp:1 },
+
+    // floating clutter
+    { x:880, y:336, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:320, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:292, w:150, h:24, material:'soft', hp:1 },
+    { x:900, y:252, w:70, h:28, material:'glass', hp:1 },
+    { x:1030, y:236, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 42 — Asymmetrical Immune Towers
-   Left: normal stone tower — ice it.
-   Right: iceproof+convertimmune stone — needs Heavy only.
-   Looks the same visually — glows tell you which is which. */
+/* 42 — Asymmetric Immunity (EXTRA JUICY) */
 {
-  id: 42, name: "Asymmetric Immunity",
+  id: 42, name: "Asymmetric Immunity++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:860, y:620, w:70, h:40, material:'stone', hp:2 },
     { x:860, y:572, w:70, h:40, material:'stone', hp:2 },
     { x:860, y:524, w:70, h:40, material:'stone', hp:2 },
     { x:860, y:476, w:70, h:40, material:'stone', hp:2 },
     { x:860, y:428, w:80, h:40, material:'soft', hp:1 },
+
     { x:1040, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','rainbowproof','convertimmune'] },
     { x:1040, y:572, w:80, h:40, material:'stone', hp:2,
@@ -1625,14 +1652,38 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:1040, y:476, w:80, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','rainbowproof','convertimmune'] },
     { x:1040, y:428, w:80, h:40, material:'glass', hp:1 },
+
+    // shared top control
+    { x:950, y:382, w:300, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // backside blocker
+    { x:1106, y:548, w:38, h:240, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // asymmetry clutter
+    { x:700, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:700, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:740, y:544, w:24, h:86, material:'glass', hp:1 },
+    { x:780, y:500, w:70, h:32, material:'wood', hp:1 },
+
+    { x:1230, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1230, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1230, y:544, w:24, h:86, material:'glass', hp:1 },
+
+    // floating mess
+    { x:900, y:334, w:70, h:28, material:'wood', hp:1 },
+    { x:1035, y:316, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:288, w:150, h:24, material:'soft', hp:1 },
+    { x:860, y:248, w:70, h:28, material:'glass', hp:1 },
+    { x:1080, y:230, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 43 — Float and Ground (no traits) */
+/* 43 — Float and Ground (EXTRA JUICY) */
 {
-  id: 43, name: "Float and Ground",
+  id: 43, name: "Float and Ground++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1050, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:870, y:556, w:24, h:88, material:'stone', hp:2 },
@@ -1642,37 +1693,81 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:900, y:422, w:80, h:40, material:'stone', hp:2 },
     { x:1020, y:422, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:374, w:180, h:40, material:'soft', hp:1 },
+
+    // fire control
+    { x:960, y:328, w:220, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1092, y:548, w:38, h:244, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side clutter
+    { x:690, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:690, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:730, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    { x:1240, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1240, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1240, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    // float clutter
+    { x:900, y:282, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:264, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:236, w:150, h:24, material:'soft', hp:1 },
+    { x:900, y:198, w:70, h:28, material:'glass', hp:1 },
+    { x:1040, y:182, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 44 — Immune Fort Inner Ring
-   Outer stone: normal — Ultra/Ice/Heavy all work.
-   Inner four blocks: fireproof+iceproof (red+cyan mixed glow visible on each).
-   Inner blocks need Normal, Heavy, or Rock only.
-   Teaches: inner fortress has different rules than outer. */
+/* 44 — Immune Fort (EXTRA JUICY) */
 {
-  id: 44, name: "Immune Fort",
+  id: 44, name: "Immune Fort++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1050, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:870, y:572, w:80, h:40, material:'stone', hp:2 },
     { x:1050, y:572, w:80, h:40, material:'stone', hp:2 },
+
     { x:960, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune','iceproof','freezeimmune'] },
     { x:960, y:572, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune','iceproof','freezeimmune'] },
+
     { x:960, y:524, w:280, h:24, material:'wood', hp:1 },
     { x:960, y:476, w:140, h:40, material:'soft', hp:1 },
     { x:960, y:428, w:100, h:40, material:'glass', hp:1 },
+
+    // top cap
+    { x:960, y:382, w:220, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1096, y:548, w:38, h:244, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side fort junk
+    { x:690, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:690, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:730, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:780, y:502, w:70, h:32, material:'wood', hp:1 },
+
+    { x:1240, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1240, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1240, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:1190, y:502, w:70, h:32, material:'wood', hp:1 },
+
+    // overhead clutter
+    { x:900, y:336, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:318, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:290, w:150, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 45 — Precision Only (no traits) */
+/* 45 — Precision Only (EXTRA JUICY) */
 {
-  id: 45, name: "Precision Only",
+  id: 45, name: "Precision Only++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:870, y:620, w:70, h:200, material:'stone', hp:2 },
     { x:1050, y:620, w:70, h:200, material:'stone', hp:2 },
     { x:960, y:620, w:100, h:40, material:'wood', hp:1 },
@@ -1680,18 +1775,37 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:960, y:508, w:100, h:40, material:'wood', hp:1 },
     { x:960, y:452, w:100, h:40, material:'glass', hp:1 },
     { x:960, y:396, w:100, h:40, material:'soft', hp:1 },
+
+    // top control
+    { x:960, y:350, w:170, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1090, y:548, w:38, h:278, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side clutter
+    { x:680, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:680, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:720, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    { x:1250, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1250, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1250, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    // fake upper bait
+    { x:900, y:302, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:286, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:256, w:150, h:24, material:'soft', hp:1 },
+    { x:900, y:214, w:70, h:28, material:'glass', hp:1 },
+    { x:1040, y:198, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 46 — Fireproof Cage + Hidden Trigger
-   Stone cage: fireproof (red glow) — Fire bounces off.
-   Inside: wood trigger block — burns fine if you reach it.
-   Must hit the glass panel to expose the wood, THEN fire or normal it.
-   Teaches: two-step: expose the target, then use the right Booha. */
+/* 46 — Fireproof Cage (EXTRA JUICY) */
 {
-  id: 46, name: "Fireproof Cage",
+  id: 46, name: "Fireproof Cage++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:900, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
     { x:1020, y:620, w:80, h:40, material:'stone', hp:2,
@@ -1706,14 +1820,35 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:1020, y:468, w:80, h:40, material:'stone', hp:2,
       traits:['fireproof','burnimmune'] },
     { x:960, y:420, w:200, h:40, material:'soft', hp:1 },
+
+    // top control
+    { x:960, y:374, w:230, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1098, y:544, w:38, h:250, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // side junk
+    { x:690, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:690, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:730, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    { x:1240, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1240, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1240, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    // floating clutter
+    { x:900, y:326, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:308, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:280, w:150, h:24, material:'soft', hp:1 },
   ]
 },
 
-/* 47 — Delayed Trap (no traits) */
+/* 47 — Delayed Trap (EXTRA JUICY) */
 {
-  id: 47, name: "Delayed Trap",
+  id: 47, name: "Delayed Trap++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:850, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:1070, y:620, w:80, h:40, material:'stone', hp:2 },
     { x:850, y:556, w:24, h:88, material:'glass', hp:1 },
@@ -1723,76 +1858,140 @@ window.BOOHA_DESTRUCTION_LEVELS = [
     { x:900, y:420, w:80, h:40, material:'stone', hp:2 },
     { x:1020, y:420, w:80, h:40, material:'stone', hp:2 },
     { x:960, y:372, w:200, h:40, material:'soft', hp:1 },
+
+    // top control
+    { x:960, y:326, w:240, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1110, y:544, w:38, h:248, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // outer junk
+    { x:660, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:660, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:700, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    { x:1260, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1260, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1260, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    // upper clutter
+    { x:900, y:278, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:260, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:232, w:150, h:24, material:'soft', hp:1 },
+    { x:900, y:192, w:70, h:28, material:'glass', hp:1 },
+    { x:1040, y:176, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 48 — Full Synergy with Traits
-   Zone A (left): iceproof+fireproof stone → Heavy only
-   Zone B (center-left): soft, no traits → Princess
-   Zone C (center-right): normal wood → Nightmare or Normal
-   Zone D (top slab): convertimmune stone → can't Rainbow it, need Heavy
-   Teaches: 4-Booha coordination with immunity knowledge. */
+/* 48 — Full Synergy (EXTRA JUICY) */
 {
-  id: 48, name: "Full Synergy",
+  id: 48, name: "Full Synergy++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:820, y:620, w:70, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','fireproof','burnimmune'] },
     { x:820, y:572, w:70, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','fireproof','burnimmune'] },
     { x:820, y:524, w:70, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','fireproof','burnimmune'] },
+
     { x:920, y:620, w:80, h:36, material:'soft', hp:1 },
     { x:920, y:576, w:80, h:36, material:'soft', hp:1 },
     { x:920, y:532, w:80, h:36, material:'soft', hp:1 },
     { x:920, y:488, w:80, h:36, material:'soft', hp:1 },
+
     { x:1030, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:1030, y:572, w:80, h:40, material:'wood', hp:1 },
     { x:1030, y:524, w:80, h:40, material:'glass', hp:1 },
     { x:1030, y:476, w:80, h:40, material:'wood', hp:1 },
+
     { x:960, y:436, w:320, h:24, material:'stone', hp:2,
       traits:['rainbowproof','convertimmune'] },
     { x:960, y:388, w:260, h:40, material:'stone', hp:2,
       traits:['rainbowproof','convertimmune'] },
+
+    // top cap
+    { x:960, y:342, w:340, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // rear blocker
+    { x:1112, y:544, w:38, h:252, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // outer junk
+    { x:650, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:650, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:690, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:730, y:500, w:70, h:32, material:'wood', hp:1 },
+
+    { x:1260, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1260, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:1260, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:1210, y:500, w:70, h:32, material:'wood', hp:1 },
+
+    // high clutter
+    { x:900, y:294, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:276, w:70, h:28, material:'glass', hp:1 },
+    { x:960, y:248, w:150, h:24, material:'soft', hp:1 },
+    { x:900, y:208, w:70, h:28, material:'glass', hp:1 },
+    { x:1040, y:192, w:70, h:28, material:'wood', hp:1 },
   ]
 },
 
-/* 49 — Domino Chain (no traits) */
+/* 49 — Domino Chain (EXTRA JUICY) */
 {
-  id: 49, name: "Domino Chain",
+  id: 49, name: "Domino Chain++",
   targetPercent: 100,
   blocks: [
+    // core lesson
     { x:820, y:620, w:60, h:40, material:'stone', hp:2 },
     { x:820, y:548, w:24, h:120, material:'stone', hp:2 },
     { x:820, y:500, w:80, h:40, material:'wood', hp:1 },
+
     { x:900, y:620, w:60, h:40, material:'wood', hp:1 },
     { x:900, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:900, y:500, w:80, h:40, material:'soft', hp:1 },
+
     { x:980, y:620, w:60, h:40, material:'wood', hp:1 },
     { x:980, y:548, w:24, h:120, material:'wood', hp:1 },
     { x:980, y:500, w:80, h:40, material:'glass', hp:1 },
+
     { x:1060, y:620, w:60, h:40, material:'stone', hp:2 },
     { x:1060, y:556, w:24, h:88, material:'glass', hp:1 },
     { x:1060, y:500, w:80, h:40, material:'soft', hp:1 },
+
     { x:1140, y:620, w:60, h:40, material:'wood', hp:1 },
     { x:1140, y:572, w:60, h:40, material:'stone', hp:2 },
     { x:1140, y:524, w:80, h:40, material:'wood', hp:1 },
+
+    // top control
+    { x:1010, y:454, w:420, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // backside blocker
+    { x:1198, y:540, w:38, h:258, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // extra outer mess
+    { x:650, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:650, y:582, w:72, h:36, material:'wood', hp:1 },
+    { x:690, y:542, w:24, h:86, material:'glass', hp:1 },
+
+    { x:1280, y:620, w:72, h:36, material:'soft', hp:1 },
+    { x:1280, y:582, w:72, h:36, material:'wood', hp:1 },
+
+    // floating clutter
+    { x:900, y:406, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:388, w:70, h:28, material:'glass', hp:1 },
+    { x:1140, y:370, w:70, h:28, material:'wood', hp:1 },
+    { x:1010, y:340, w:180, h:24, material:'soft', hp:1 },
+    { x:1010, y:300, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
-/* 50 — BOOHA ENDGAME
-   Everything combined:
-   - Stone fortress left: iceproof+fireproof → Heavy only
-   - Soft cluster center: no traits → Princess
-   - Glass decoy: normal (ignore or quick-hit)
-   - Wood rear: normal → Nightmare behind the wall
-   - Ultimateproof base block: Ultimate skips it → plan the follow-up
-   - Convertimmune top slab: can't rainbow → must brute Heavy
-   Hard. First run is reconnaissance. Second run is execution. */
+/* 50 — BOOHA ENDGAME (EXTRA JUICY) */
 {
-  id: 50, name: "BOOHA ENDGAME",
+  id: 50, name: "BOOHA ENDGAME+++",
   targetPercent: 95,
   blocks: [
+    // core lesson
     { x:820, y:620, w:70, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','fireproof','burnimmune'] },
     { x:820, y:572, w:70, h:40, material:'stone', hp:2,
@@ -1801,24 +2000,56 @@ window.BOOHA_DESTRUCTION_LEVELS = [
       traits:['iceproof','freezeimmune','fireproof','burnimmune'] },
     { x:820, y:476, w:70, h:40, material:'stone', hp:2,
       traits:['iceproof','freezeimmune','fireproof','burnimmune'] },
+
     { x:920, y:620, w:80, h:36, material:'soft', hp:1 },
     { x:920, y:576, w:80, h:36, material:'soft', hp:1 },
     { x:920, y:532, w:80, h:36, material:'soft', hp:1 },
+
     { x:960, y:488, w:80, h:80, material:'glass', hp:1 },
+
     { x:1040, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:1120, y:620, w:80, h:40, material:'wood', hp:1 },
     { x:1040, y:572, w:80, h:40, material:'glass', hp:1 },
     { x:1120, y:572, w:80, h:40, material:'wood', hp:1 },
     { x:1080, y:524, w:200, h:24, material:'wood', hp:1 },
-    // Ultimateproof base — magenta glow, Ultimate blast skips it
+
     { x:960, y:620, w:80, h:40, material:'stone', hp:2,
       traits:['ultimateproof'] },
-    // Convertimmune top slab — lime glow, Rainbow can't glass-ify it
+
     { x:870, y:436, w:420, h:24, material:'stone', hp:2,
       traits:['rainbowproof','convertimmune'] },
     { x:870, y:388, w:340, h:40, material:'stone', hp:2,
       traits:['rainbowproof','convertimmune'] },
     { x:870, y:340, w:200, h:40, material:'soft', hp:1 },
+
+    // extra fire control
+    { x:980, y:294, w:460, h:24, material:'stone', hp:2, traits:['burnimmune'] },
+
+    // stronger backside anti-ultimate wall
+    { x:1218, y:536, w:42, h:272, material:'stone', hp:2, traits:['ultimateproof'] },
+
+    // left junk fortress
+    { x:650, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:650, y:582, w:74, h:36, material:'wood', hp:1 },
+    { x:690, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:730, y:500, w:70, h:32, material:'wood', hp:1 },
+    { x:700, y:458, w:70, h:32, material:'glass', hp:1 },
+
+    // right junk fortress
+    { x:1310, y:620, w:74, h:36, material:'soft', hp:1 },
+    { x:1310, y:582, w:74, h:36, material:'wood', hp:1 },
+    { x:1310, y:542, w:24, h:86, material:'glass', hp:1 },
+    { x:1260, y:500, w:70, h:32, material:'wood', hp:1 },
+    { x:1290, y:458, w:70, h:32, material:'glass', hp:1 },
+
+    // overhead chaos field
+    { x:900, y:248, w:70, h:28, material:'wood', hp:1 },
+    { x:1040, y:230, w:70, h:28, material:'glass', hp:1 },
+    { x:1160, y:212, w:70, h:28, material:'wood', hp:1 },
+    { x:980, y:184, w:180, h:24, material:'soft', hp:1 },
+    { x:900, y:144, w:70, h:28, material:'glass', hp:1 },
+    { x:1040, y:128, w:70, h:28, material:'wood', hp:1 },
+    { x:1160, y:112, w:70, h:28, material:'glass', hp:1 },
   ]
 },
 
