@@ -1,5 +1,97 @@
 
- // ============================================================
+
+/* =====================================================
+   BLOCK ARCHETYPES — reference templates
+   Copy and adjust x/y/w/h/floorOffset per level.
+
+   RESIST SCALE:
+     1.0  = normal damage
+     0.5  = noticeable reduction
+     0.2  = almost useless
+     0.1  = hard counter wall
+
+   GLOW COLORS (shown in-game):
+     ultimateproof → magenta
+     fireproof     → orange-red
+     iceproof      → cyan
+     heavyproof    → amber
+     rockproof     → grey
+     rainbowproof  → green
+     burnimmune    → orange
+     freezeimmune  → light blue
+     convertimmune → lime
+   ===================================================== */
+
+const ARCHETYPES = {
+
+  // ── Anchor Block ─────────────────────────────────────
+  // Core of towers. Must be cracked or prepped before
+  // Ultimate/Heavy can finish it. Glows magenta + amber.
+  anchor: (overrides) => ({
+    material: 'stone',
+    hp: 4,
+    traits: ['ultimateproof', 'heavyproof'],
+    resist: { fire: 0.15, rock: 0.5 },
+    w: 60, h: 60,
+    ...overrides,
+  }),
+
+  // ── Spread Block ─────────────────────────────────────
+  // No traits, no resist — but burns fast and spreads
+  // fire aggressively. Makes Fire Booha risky near clusters.
+  // burnBoost flag is read by applyFireBurn (chunk 6).
+  spread: (overrides) => ({
+    material: 'wood',
+    hp: 2,
+    traits: [],
+    resist: {},
+    burnBoost: true,
+    w: 50, h: 40,
+    ...overrides,
+  }),
+
+  // ── Glass Converter Block ─────────────────────────────
+  // Soft to heavy, ideal Rainbow target.
+  // Glows green (rainbowproof is NOT set — this encourages rainbow).
+  glassConverter: (overrides) => ({
+    material: 'soft',
+    hp: 2,
+    traits: [],
+    resist: { heavy: 0.5 },
+    w: 50, h: 50,
+    ...overrides,
+  }),
+
+  // ── Frozen Core Block ────────────────────────────────
+  // Fireproof + freeze immune (already frozen state).
+  // Hard to heavy. Ice shatters it efficiently via
+  // the existing freeze→shatter mechanic.
+  // Glows orange-red (fireproof).
+  frozenCore: (overrides) => ({
+    material: 'ice',
+    hp: 3,
+    traits: ['fireproof', 'freezeimmune'],
+    resist: { heavy: 0.6, rock: 0.4, ultimate: 0.5 },
+    w: 55, h: 55,
+    ...overrides,
+  }),
+
+  // ── Shock Block ──────────────────────────────────────
+  // Deferred — placeholder only, not active yet.
+  // shock: true flag reserved for future vertical
+  // damage propagation system.
+  shock: (overrides) => ({
+    material: 'stone',
+    hp: 2,
+    traits: [],
+    resist: {},
+    shock: true,
+    w: 50, h: 30,
+    ...overrides,
+  }),
+
+};
+// ============================================================
 // Booha Destruction — Levels 1–10 (CORRECTED)
 //
 // Canvas: 1280×720, FLOOR_Y = 640
@@ -14,6 +106,24 @@
 ============================================================ */
 
 window.BOOHA_DESTRUCTION_LEVELS = [
+  {
+    targetPercent: 80,
+    blocks: [
+      // Anchor holding up the tower base — needs Ice or Rock prep
+      ARCHETYPES.anchor({ x: 640, floorOffset: 60 }),
+
+      // Spread blocks flanking — fire will chain between them
+      ARCHETYPES.spread({ x: 580, floorOffset: 60 }),
+      ARCHETYPES.spread({ x: 700, floorOffset: 60 }),
+
+      // Frozen core mid-tower — only Ice breaks efficiently
+      ARCHETYPES.frozenCore({ x: 640, floorOffset: 120 }),
+
+      // Glass converter on top — reward Rainbow use
+      ARCHETYPES.glassConverter({ x: 640, floorOffset: 180 }),
+    ],
+  },
+];
  /* 1 — First Shot+ */
 {
   id: 1, name: "First Shot+",
