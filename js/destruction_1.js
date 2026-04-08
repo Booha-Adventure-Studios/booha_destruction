@@ -1123,35 +1123,70 @@ function traitGlowColor(block) {
       falling:false,
       shake:0, vy:0, fallen:false, hitFlash:0,
       frozen:false, burning:false, burnTimer:0, ringCrack:false, compressY:0,
+       
       // v4: trait & resist system
       traits: Array.isArray(def.traits) ? [...def.traits] : [],
       resist: def.resist ? {...def.resist} : {},
+      burnBoost: def.burnBoost === true,
+      burnStacks: 0,
     };
   }
 
   // ── Power helpers ────────────────────────────────────
   function applyFireBurn(block) {
-    if (block.broken || block.burning) return;
-    // v4: burnimmune blocks can't be set on fire
+    if (block.broken) return;
     if (powerBlocked(block, 'fire', 'burn')) return;
-    block.burning=true; block.burnTimer=120;
+    // Stack-based: first hit ignites, second hit enables damage ticks
+    block.burnStacks = (block.burnStacks || 0) + 1;
+    if (block.burnStacks === 1) {
+      // First hit — ignite only, no damage yet
+      block.burning = true;
+      block.burnTimer = block.burnBoost ? 160 : 120;
+      block.burnDamageEnabled = false;
+    } else {
+      // Second hit — enable real damage ticks
+      block.burnDamageEnabled = true;
+      // Refresh timer so it doesn't immediately expire
+      block.burnTimer = Math.max(block.burnTimer, block.burnBoost ? 120 : 80);
+    }
   }
 
   // v4: updateBurning checks burnimmune before ticking
   function updateBurning() {
     gs.blocks.forEach((block, idx) => {
       if (!block.burning || block.broken) return;
-      // Safety: if block somehow gained immunity after being set on fire
-      if (powerBlocked(block, 'fire', 'burn')) { block.burning=false; return; }
+      if (powerBlocked(block, 'fire', 'burn')) { block.burning = false; return; }
       block.burnTimer--;
-      if (block.burnTimer%40===0 && block.hp>0) {
-        damageBlock(block, 1, block.x, block.y, 8, idx, false, 'fire');
-        spawnEmber(block.x+rnd(-block.w/2,block.w/2), block.y-block.h/2);
+      const tickRate = block.burnBoost ? 28 : 40;
+      if (block.burnTimer % tickRate === 0 && block.hp > 0) {
+        // Ignited but not stacked — smoke and embers only, no damage
+        if (!block.burnDamageEnabled) {
+          spawnEmber(block.x + rnd(-block.w/2, block.w/2), block.y - block.h/2);
+          spawnEmber(block.x + rnd(-block.w/2, block.w/2), block.y - block.h/2);
+        } else {
+          // Second stack — real damage ticks
+          damageBlock(block, 1, block.x, block.y, 8, idx, false, 'fire');
+          spawnEmber(block.x + rnd(-block.w/2, block.w/2), block.y - block.h/2);
+          // Spread boost: spread fire faster to nearby blocks
+          if (block.burnBoost) {
+            gs.blocks.forEach(other => {
+              if (!other.broken && other !== block &&
+                  dist(other.x, other.y, block.x, block.y) < 70) {
+                applyFireBurn(other);
+              }
+            });
+          }
+        }
       }
-      if (block.burnTimer<=0) block.burning=false;
+      if (block.burnTimer <= 0) {
+        block.burning = false;
+        block.burnStacks = 0;
+        block.burnDamageEnabled = false;
+      }
     });
   }
 
+   
   function updateFrozen() {
     for (const [idx, frames] of gs.frozen.entries()) {
       if (frames<=0) {
