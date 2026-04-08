@@ -555,7 +555,7 @@
             grav:rnd(0.04,0.1), rot:rnd(0,Math.PI*2), rotV:rnd(-0.3,0.3),
             wob:rnd(0,Math.PI*2), wobS:rnd(0.08,0.16), wobA:rnd(1,3),
             pls:rnd(0,Math.PI*2), plsS:rnd(0.15,0.25),
-            bounce:0.3, bounced:false, hitOnce:false,
+            bounce:0.3, bounced:false, hitOnce:false, power:'fire',
           };
           if (dmgEnabled) pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
           else            pushCapped(confetti, CAP.confetti, dc);
@@ -692,7 +692,7 @@
               rot:rnd(0,Math.PI*2), rotV:rnd(-0.25,0.25),
               wob:rnd(0,Math.PI*2), wobS:rnd(0.06,0.14), wobA:rnd(0.5,2),
               pls:rnd(0,Math.PI*2), plsS:rnd(0.12,0.22),
-              damaging:true, hitOnce:false, bounce:0.28, bounced:false,
+              damaging:true, hitOnce:false, bounce:0.28, bounced:false, power:'ultimate',
             };
             pushCapped(gs.damageConfetti, CAP.damageConfetti, dc);
           }
@@ -888,7 +888,7 @@
           const block = gs.blocks[entry.idx];
           if (!block || block.broken) continue;
           if (dist(cx, c.y, block.x, block.y) < entry.halfW + cr) {
-            damageBlock(block, 1, cx, c.y, 5, entry.idx, false, null);
+            damageBlock(block, 1, cx, c.y, 5, entry.idx, false, c.power || null);
             c.hitOnce = true;
             break;
           }
@@ -1098,7 +1098,7 @@
     }
   }
 
-  // ── v4: Block damage ─────────────────────────────────
+// ── v4: Block damage ─────────────────────────────────
   // power param (string|null): the Booha power causing this damage.
   // Checks powerBlocked() and applies resist scalar before dealing damage.
   function damageBlock(block, amount, hx, hy, spd, idx, doSFX=true, power=null) {
@@ -1106,7 +1106,6 @@
 
     // Check full immunity first
     if (power && powerBlocked(block, power, 'hit')) {
-      // Show a "deflect" visual: white wave + brief flash on the block
       spawnWave(hx, hy, '#ffffff', 26);
       block.hitFlash = 0.35;
       addShake(1.5);
@@ -1142,7 +1141,8 @@
     }
   }
 
-  // ── v4: Block collision ─────────────────────────────
+   
+ // ── v4: Block collision ─────────────────────────────
   function blockCollide(block, idx) {
     const b=gs.booha; if(!b||!b.launched||block.broken) return;
     if (b.tell) return;
@@ -1155,28 +1155,49 @@
     sndHit(block.material, spd);
     const power=b.power;
 
-    // v4: check immunity before applying special effects
-    const fireImmune    = powerBlocked(block, 'fire',    'hit');
-    const iceImmune     = powerBlocked(block, 'ice',     'hit') || powerBlocked(block, 'ice', 'freeze');
-    const rainbowImmune = powerBlocked(block, 'rainbow', 'hit') || powerBlocked(block, 'rainbow', 'convert');
+    // v4: immunity checks
+    const fireImmune     = powerBlocked(block, 'fire',     'hit');
+    const iceImmune      = powerBlocked(block, 'ice',      'hit') || powerBlocked(block, 'ice',     'freeze');
+    const rainbowImmune  = powerBlocked(block, 'rainbow',  'hit') || powerBlocked(block, 'rainbow', 'convert');
+    const ultimateImmune = powerBlocked(block, 'ultimate', 'hit');
+    const heavyImmune    = powerBlocked(block, 'heavy',    'hit');
+    const rockImmune     = powerBlocked(block, 'rock',     'hit');
 
-    if (power==='ice' && !iceImmune)      { spawnRingCrack(cx,cy); block.ringCrack=true; }
-    if (power==='fire' && !fireImmune)    { spawnScorch(cx,cy); }
-    if (power==='heavy')                  { block.compressY=6; }
-    if (power==='princess')               { b.impactCompress=1; b.impactCompressDir=Math.atan2(dy,dx); }
-    if (power==='nightmare')              { setTimeout(()=>sndHit(block.material,spd),160); }
+    const fullyBlocked =
+      (power==='fire'      && fireImmune)     ||
+      (power==='ultimate'  && ultimateImmune) ||
+      (power==='heavy'     && heavyImmune)    ||
+      (power==='rock'      && rockImmune)     ||
+      (power==='ice'       && iceImmune)      ||
+      (power==='rainbow'   && rainbowImmune);
 
-    if (power==='ice' && !iceImmune && !block.frozen) {
+    if (fullyBlocked) {
+      spawnWave(cx, cy, '#ffffff', 32);
+      block.hitFlash = 0.45;
+      addShake(2);
+      const nx=dx===0&&dy===0?1:dx/Math.sqrt(dsq||1), ny=dx===0&&dy===0?0:dy/Math.sqrt(dsq||1);
+      const dot=b.vx*nx+b.vy*ny;
+      b.vx=(b.vx-2*dot*nx)*BOUNCE; b.vy=(b.vy-2*dot*ny)*BOUNCE;
+      if(Math.abs(dx)>Math.abs(dy)) b.x=cx+nx*(b.radius+1); else b.y=cy+ny*(b.radius+1);
+      return;
+    }
+
+    // Special effects — only reach here if not fully blocked
+    if (power==='ice')      { spawnRingCrack(cx,cy); block.ringCrack=true; }
+    if (power==='fire')     { spawnScorch(cx,cy); }
+    if (power==='heavy')    { block.compressY=6; }
+    if (power==='princess') { b.impactCompress=1; b.impactCompressDir=Math.atan2(dy,dx); }
+    if (power==='nightmare'){ setTimeout(()=>sndHit(block.material,spd),160); }
+
+    if (power==='ice' && !block.frozen) {
       block.frozen=true; gs.frozen.set(idx,90);
       spawnWave(cx,cy,'#aaeeff',50); spawnSparks(cx,cy,'ice',spd,10); addShake(4);
     }
-
-    if (power==='rainbow' && !rainbowImmune && block.material!=='glass') {
+    if (power==='rainbow' && block.material!=='glass') {
       block.material='glass'; block.hp=1; block.maxHp=1;
       spawnWave(cx,cy,'#ff88ff',55);
     }
-
-    if (power==='princess'&&!b.spawnedMinis) {
+    if (power==='princess' && !b.spawnedMinis) {
       b.spawnedMinis=true;
       for (let m=0;m<3;m++) {
         const ang=-Math.PI*0.5+rnd(-0.6,0.6);
@@ -1184,15 +1205,15 @@
       }
     }
 
-    // v4: compute damage with power type for resist check
+    // Damage
     let dmg=0;
-    if      (power==='heavy')                    dmg=2;
-    else if (power==='ice'||power==='rainbow')   dmg=0;
+    if      (power==='heavy')                   dmg=2;
+    else if (power==='ice'||power==='rainbow')  dmg=0;
     else dmg = block.material==='stone'?(spd>11?1:0) : block.material==='glass'?1 : block.material==='soft'?(spd>5?1:0) : (spd>7?1:0);
     if (dmg>0) damageBlock(block,dmg,cx,cy,spd,idx,true,power);
 
-    // v4: fire spread also checks burnimmune on neighbours
-    if (power==='fire' && !fireImmune) {
+    // Fire spread
+    if (power==='fire') {
       gs.blocks.forEach((blk,i)=>{
         if(!blk.broken && dist(blk.x,blk.y,block.x,block.y)<120) applyFireBurn(blk);
       });
