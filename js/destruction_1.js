@@ -314,6 +314,18 @@
     ice:   {base:'#d0f8ff',mid:'#80d8f8',dark:'#3898cc',edge:'#eeffff',spark:'#ccf8ff',chip:'#a0e8f8',grain:false},
     fire:  {base:'#ff9944',mid:'#cc5500',dark:'#882200',edge:'#ffbb66',spark:'#ffcc44',chip:'#ff8833',grain:false},
   };
+ // ── Resist glow colours (per power) ─────────────────
+  const RESIST_COLORS = {
+    fire:     '#ff4400',
+    ice:      '#00ccff',
+    heavy:    '#ffaa00',
+    rock:     '#888888',
+    rainbow:  '#88ff44',
+    ultimate: '#ff00ff',
+  };
+
+
+   
   function matFill(block) {
     if (block.frozen) return '#b8f0ff';
     const m = MAT[block.material] || MAT.wood;
@@ -481,8 +493,18 @@
 
   // Returns a colour to tint the block border based on its dominant trait.
   // Used by drawBlocks() for visual teaching.
-  function traitGlowColor(block) {
-    if (!block.traits || !block.traits.length) return null;
+function traitGlowColor(block) {
+    if (!block.traits || !block.traits.length) {
+      // Resist-only blocks: pick color based on strongest resist key
+      if (block.resist) {
+        const keys = Object.keys(block.resist);
+        if (!keys.length) return null;
+        // Lowest value = strongest resistance
+        const dominant = keys.reduce((a, b) => block.resist[a] <= block.resist[b] ? a : b);
+        return RESIST_COLORS[dominant] || '#dddddd';
+      }
+      return null;
+    }
     if (hasTrait(block, 'ultimateproof')) return '#ff00ff';
     if (hasTrait(block, 'fireproof'))     return '#ff4400';
     if (hasTrait(block, 'iceproof'))      return '#00ccff';
@@ -490,16 +512,18 @@
     if (hasTrait(block, 'rockproof'))     return '#888888';
     if (hasTrait(block, 'rainbowproof'))  return '#88ff44';
     if (hasTrait(block, 'burnimmune'))    return '#ff6600';
-    if (hasTrait(block, 'freezeimmune')) return '#aaddff';
+    if (hasTrait(block, 'freezeimmune'))  return '#aaddff';
     if (hasTrait(block, 'convertimmune')) return '#ccff88';
-    // Resist-only (no full immunity trait) — check resist map
+    // Has traits but none matched above — fall back to resist dominant
     if (block.resist) {
       const keys = Object.keys(block.resist);
-      if (keys.length) return '#dddddd';
+      if (keys.length) {
+        const dominant = keys.reduce((a, b) => block.resist[a] <= block.resist[b] ? a : b);
+        return RESIST_COLORS[dominant] || '#dddddd';
+      }
     }
-    return null;
+    return '#dddddd';
   }
-
   // ── Death explosions ─────────────────────────────────
   function triggerDeathExplosion(b) {
     const x = b.x, y = b.y, power = b.power, ri = b.ri;
@@ -673,11 +697,13 @@
       }
       case 'ultimate': {
         addShake(18 * scale);
+         
         gs.blocks.forEach((block, idx) => {
-          if (block.broken) return;
-          if (dist(x, y, block.x, block.y) > 320) return;
-          // v4: ultimate respects ultimateproof
-          if (powerBlocked(block, 'ultimate', 'hit')) return;
+        if (block.broken) return;
+        if (dist(x, y, block.x, block.y) > 220) return;
+        if (powerBlocked(block, 'ultimate', 'hit')) return;
+        if (block.hp >= block.maxHp && !block.falling) return;
+           
           const m = MAT[block.material] || MAT.wood;
           const cnt = ~~(rnd(8,18));
           for (let i = 0; i < cnt; i++) {
@@ -1214,10 +1240,10 @@
 
     // Fire spread
     if (power==='fire') {
-      gs.blocks.forEach((blk,i)=>{
-        if(!blk.broken && dist(blk.x,blk.y,block.x,block.y)<120) applyFireBurn(blk);
-      });
-    }
+    gs.blocks.forEach((blk,i)=>{
+    if(!blk.broken && dist(blk.x,blk.y,block.x,block.y)<80) applyFireBurn(blk);
+   });
+ }
 
     if (power==='rock'&&!b.piercedOnce) { b.piercedOnce=true; return; }
     if (power==='monster') { gs.bounces++; b.radius=Math.min(b.baseRadius*(1+gs.bounces*0.22),B_RADIUS*2.8); }
@@ -1429,13 +1455,14 @@
         }
         if(b.power==='ultimate'&&!b.confettiFired){
           b.confettiFired=true; initTell(b); spawnDetonation(b.x,b.y);
+           
           gs.blocks.forEach((block,i)=>{
-            if(!block.broken&&dist(b.x,b.y,block.x,block.y)<280) {
-              // v4: ultimate settl check respects ultimateproof
-              if(!powerBlocked(block,'ultimate','hit'))
-                damageBlock(block,block.hp,block.x,block.y,20,i,false,'ultimate');
-            }
-          });
+          if(!block.broken&&dist(b.x,b.y,block.x,block.y)<220) {
+          if(!powerBlocked(block,'ultimate','hit') && (block.hp < block.maxHp || block.falling))
+          damageBlock(block,block.hp,block.x,block.y,20,i,false,'ultimate');
+       }
+     });
+           
           gs.pct=(gs.brokenBlocks/gs.totalBlocks)*100;
         }
       }
