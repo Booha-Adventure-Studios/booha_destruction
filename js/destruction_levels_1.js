@@ -106,24 +106,6 @@ const ARCHETYPES = {
 ============================================================ */
 
 window.BOOHA_DESTRUCTION_LEVELS = [
-  {
-    targetPercent: 80,
-    blocks: [
-      // Anchor holding up the tower base — needs Ice or Rock prep
-      ARCHETYPES.anchor({ x: 640, floorOffset: 60 }),
-
-      // Spread blocks flanking — fire will chain between them
-      ARCHETYPES.spread({ x: 580, floorOffset: 60 }),
-      ARCHETYPES.spread({ x: 700, floorOffset: 60 }),
-
-      // Frozen core mid-tower — only Ice breaks efficiently
-      ARCHETYPES.frozenCore({ x: 640, floorOffset: 120 }),
-
-      // Glass converter on top — reward Rainbow use
-      ARCHETYPES.glassConverter({ x: 640, floorOffset: 180 }),
-    ],
-  },
-];
  /* 1 — First Shot+ */
 {
   id: 1, name: "First Shot+",
