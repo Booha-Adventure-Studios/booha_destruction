@@ -428,6 +428,48 @@
     pushCapped(waves, CAP.waves, {x, y, r:10, maxR:100, life:1, col:'#bb00ff'});
     addShake(8);
   }
+
+// ── CLANG labels ─────────────────────────────────────
+  const clangLabels = [];
+
+  function spawnClangLabel(x, y) {
+    clangLabels.push({
+      x, y: y - 20,
+      vy: -1.2,
+      life: 1,
+      text: pick(['CLANG!', 'NOPE!', 'IMMUNE!']),
+    });
+  }
+
+  function updateClangLabels() {
+    for (let i = clangLabels.length - 1; i >= 0; i--) {
+      const c = clangLabels[i];
+      c.y += c.vy;
+      c.vy *= 0.92;
+      c.life -= 0.028;
+      if (c.life <= 0) clangLabels.splice(i, 1);
+    }
+  }
+
+  function drawClangLabels() {
+    for (const c of clangLabels) {
+      ctx.save();
+      ctx.globalAlpha = clamp(c.life, 0, 1);
+      ctx.font = 'bold 18px system-ui,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 4;
+      ctx.strokeText(c.text, c.x, c.y);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(c.text, c.x, c.y);
+      ctx.restore();
+    }
+  }
+
+
+
+   
   function spawnDetonation(x, y) {
     for (let i = 0; i < 80; i++) {
       const a = rnd(0,Math.PI*2), mag = rnd(8,32);
@@ -1199,8 +1241,22 @@ function traitGlowColor(block) {
 
     if (fullyBlocked) {
       spawnWave(cx, cy, '#ffffff', 32);
-      block.hitFlash = 0.45;
-      addShake(2);
+      spawnWave(cx, cy, traitGlowColor(block) || '#ffffff', 22);
+      for (let i = 0; i < 10; i++) {
+        const a = rnd(0, Math.PI*2), mag = rnd(2, 7);
+        pushCapped(sparks, CAP.sparks, {
+          x: cx, y: cy,
+          vx: Math.cos(a)*mag, vy: Math.sin(a)*mag - rnd(1, 3),
+          life: 1, r: rnd(2, 5),
+          col: traitGlowColor(block) || '#ffffff',
+          type: 'dot', grav: 0.18, rot: 0, rotV: 0,
+          decay: rnd(0.03, 0.06)
+        });
+      }
+      block.hitFlash = 0.6;
+      addShake(2.5);
+      synthPop(900 + rnd()*200, 0.18, 0.06);
+      spawnClangLabel(cx, cy);
       const nx=dx===0&&dy===0?1:dx/Math.sqrt(dsq||1), ny=dx===0&&dy===0?0:dy/Math.sqrt(dsq||1);
       const dot=b.vx*nx+b.vy*ny;
       b.vx=(b.vx-2*dot*nx)*BOUNCE; b.vy=(b.vy-2*dot*ny)*BOUNCE;
@@ -1208,6 +1264,7 @@ function traitGlowColor(block) {
       return;
     }
 
+     
     // Special effects — only reach here if not fully blocked
     if (power==='ice')      { spawnRingCrack(cx,cy); block.ringCrack=true; }
     if (power==='fire')     { spawnScorch(cx,cy); }
@@ -1539,6 +1596,7 @@ function traitGlowColor(block) {
     updateConfetti();
     updateMinis();
     updateNightmareFlicker();
+    updateClangLabels();
   }
 
   // ── Input ────────────────────────────────────────────
@@ -1798,6 +1856,7 @@ function traitGlowColor(block) {
       ctx.restore();
     }
     drawScorchMarks();
+    drawClangLabels();
   }
   function drawFlash(){
     if(gs.flash<=0)return;
