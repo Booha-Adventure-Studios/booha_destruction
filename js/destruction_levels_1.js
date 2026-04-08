@@ -13,11 +13,7 @@
   No traits. Learn physics, Booha powers, basic collapse.
 ============================================================ */
 
-/* 1 — First Shot+
-   Side junk: two leaning towers (tall glass column + cap)
-   Rear blocker h=200 → y = 640 - 100 = 540
-   Left tower x=740 right edge = 740+45=785 ✓
-   Right tower x=1130 right edge = 1130+45=1175 ✓ */
+/* 1 — First Shot+ */
 {
   id: 1, name: "First Shot+",
   targetPercent: 100,
@@ -54,9 +50,7 @@
   ]
 },
 
-/* 2 — Glass Aware+
-   Side junk: scattered single blocks at different heights
-   Rear blocker h=170 → y = 640 - 85 = 555 */
+/* 2 — Glass Aware+ */
 {
   id: 2, name: "Glass Aware+",
   targetPercent: 100,
@@ -91,9 +85,7 @@
   ]
 },
 
-/* 3 — Glass Core+
-   Side junk: pyramid stacks
-   Rear blocker h=180 → y = 640 - 90 = 550 */
+/* 3 — Glass Core+ */
 {
   id: 3, name: "Glass Core+",
   targetPercent: 100,
@@ -127,9 +119,7 @@
   ]
 },
 
-/* 4 — Meet Heavy+
-   Side junk: domino-style thin verticals
-   Rear blocker h=170 → y = 640 - 85 = 555 */
+/* 4 — Meet Heavy+*/
 {
   id: 4, name: "Meet Heavy+",
   targetPercent: 100,
@@ -163,9 +153,7 @@
   ]
 },
 
-/* 5 — Spread Shot+
-   Side junk: arch shapes — two pillars with a cap
-   Rear blocker h=170 → y = 640 - 85 = 555 */
+/* 5 — Spread Shot+*/
 {
   id: 5, name: "Spread Shot+",
   targetPercent: 100,
@@ -202,9 +190,7 @@
   ]
 },
 
-/* 6 — Tall Glass Tower+
-   Side junk: flat stepped shelves
-   Rear blocker h=210 → y = 640 - 105 = 535 */
+/* 6 — Tall Glass Tower+ */
 {
   id: 6, name: "Tall Glass Tower+",
   targetPercent: 100,
@@ -238,9 +224,7 @@
   ]
 },
 
-/* 7 — First Choice+
-   Side junk: X-cross stacks (two diagonally offset blocks)
-   Rear blocker h=178 → y = 640 - 89 = 551 */
+/* 7 — First Choice+*/
 {
   id: 7, name: "First Choice+",
   targetPercent: 100,
@@ -280,9 +264,7 @@
   ]
 },
 
-/* 8 — Offset Tower+
-   Side junk: staircase steps ascending toward center
-   Rear blocker h=200 → y = 640 - 100 = 540 */
+/* 8 — Offset Tower+0 */
 {
   id: 8, name: "Offset Tower+",
   targetPercent: 100,
@@ -317,9 +299,7 @@
   ]
 },
 
-/* 9 — Bounce Intro+
-   Side junk: T-shapes (horizontal bar on a vertical post)
-   Rear blocker h=174 → y = 640 - 87 = 553 */
+/* 9 — Bounce Intro+ */
 {
   id: 9, name: "Bounce Intro+",
   targetPercent: 100,
@@ -353,9 +333,7 @@
   ]
 },
 
-/* 10 — False Base+
-   Side junk: zigzag / alternating offset columns
-   Rear blocker h=182 → y = 640 - 91 = 549 */
+/* 10 — False Base+ 549 */
 {
   id: 10, name: "False Base+",
   targetPercent: 100,
@@ -389,6 +367,7 @@
     { x:920, y:312, w:130, h:24, material:'wood', hp:1 },
   ]
 }, 
+
 // ============================================================
 // Booha Destruction — Levels 11–20 (CORRECTED)
 //
@@ -403,10 +382,7 @@
   One or two immune blocks introduced per round.
 ============================================================ */
 
-/* 11 — Fireproof Anchor+
-   Teaches: Fire is selective. Red glow = fireproof.
-   Side junk: castle battlements (wide base + notched top)
-   Rear blocker h=184 → y = 640 - 92 = 548 */
+/* 11 — Fireproof Anchor+ */
 {
   id: 11, name: "Fireproof Anchor+",
   targetPercent: 100,
@@ -445,10 +421,7 @@
   ]
 },
 
-/* 12 — Iceproof Column+
-   Teaches: Cyan glow = iceproof. Use Heavy on columns.
-   Side junk: fence posts — evenly spaced thin verticals
-   Rear blocker h=210 → y = 640 - 105 = 535 */
+/* 12 — Iceproof Column+*/
 {
   id: 12, name: "Iceproof Column+",
   targetPercent: 100,
@@ -486,10 +459,7 @@
   ]
 },
 
-/* 13 — Rainbow Wall+
-   Teaches: Lime glow = rainbowproof. Rainbow won't convert it.
-   Side junk: hourglass shapes (wide-narrow-wide)
-   Rear blocker h=184 → y = 640 - 92 = 548 */
+/* 13 — Rainbow Wall+*/
 {
   id: 13, name: "Rainbow Wall+",
   targetPercent: 100,
@@ -525,10 +495,7 @@
   ]
 },
 
-/* 14 — Heavyproof Soft Wall+
-   Teaches: Amber glow = heavyproof. Use Fire/Normal instead.
-   Side junk: scattered boulders (large square chunks)
-   Rear blocker h=178 → y = 640 - 89 = 551 */
+/* 14 — Heavyproof Soft Wall+ */
 {
   id: 14, name: "Heavyproof Soft Wall+",
   targetPercent: 100,
@@ -563,10 +530,7 @@
   ]
 },
 
-/* 15 — Chain Reaction+
-   Teaches: Topple left tower to bridge-collapse into right.
-   Side junk: bridge segments (flat planks at mid height)
-   Rear blocker h=206 → y = 640 - 103 = 537 */
+/* 15 — Chain Reaction+ */
 {
   id: 15, name: "Chain Reaction+",
   targetPercent: 100,
@@ -601,10 +565,7 @@
   ]
 },
 
-/* 16 — Nightmare Intro+
-   Teaches: First Nightmare Booha level — use to clip through wall.
-   Side junk: L-shaped corners
-   Rear blocker h=210 → y = 640 - 105 = 535 */
+/* 16 — Nightmare Intro+*/
 {
   id: 16, name: "Nightmare Intro+",
   targetPercent: 100,
@@ -643,10 +604,7 @@
   ]
 },
 
-/* 17 — Burn Spread+
-   Teaches: Fire spreads to adjacent wood/soft. Plan the chain.
-   Side junk: campfire stacks (log-cabin cross-layers)
-   Rear blocker h=186 → y = 640 - 93 = 547 */
+/* 17 — Burn Spread+*/
 {
   id: 17, name: "Burn Spread+",
   targetPercent: 100,
@@ -685,10 +643,7 @@
   ]
 },
 
-/* 18 — Fireproof Wall+
-   Teaches: Fireproof vertical wall blocks Fire path. Go around.
-   Side junk: tumbled rubble — rotated-feel irregular chunks
-   Rear blocker h=212 → y = 640 - 106 = 534 */
+/* 18 — Fireproof Wall+*/
 {
   id: 18, name: "Fireproof Wall+",
   targetPercent: 100,
@@ -723,10 +678,7 @@
   ]
 },
 
-/* 19 — False Center+
-   Teaches: The obvious target blocks are actually the weakest.
-   Side junk: tripod legs — three-legged stands
-   Rear blocker h=214 → y = 640 - 107 = 533 */
+/* 19 — False Center+ */
 {
   id: 19, name: "False Center+",
   targetPercent: 100,
@@ -763,10 +715,7 @@
   ]
 },
 
-/* 20 — Vertical Collapse+
-   Teaches: Tall tower needs a single low hit to topple everything.
-   Side junk: scaffolding — vertical post with horizontal rungs
-   Rear blocker h=320 → y = 640 - 160 = 480 */
+/* 20 — Vertical Collapse+ */
 {
   id: 20, name: "Vertical Collapse+",
   targetPercent: 100,
@@ -819,10 +768,7 @@
   Right Booha mechanically required. Wrong approach costs 4+ shots.
 ============================================================ */
 
-/* 21 — Fireproof Core+
-   Teaches: Identify the immune core, save Fire for other rounds.
-   Side junk: wrecking ball setup — heavy stone on a thin glass post
-   Rear blocker h=190 → y = 640 - 95 = 545 */
+/* 21 — Fireproof Core+ */
 {
   id: 21, name: "Fireproof Core+",
   targetPercent: 100,
@@ -859,10 +805,7 @@
   ]
 },
 
-/* 22 — Iceproof Base+
-   Teaches: Cyan base blocks ignore Ice aura. Use Heavy or Normal.
-   Side junk: igloo arches — two curved-feel stone blocks + cap
-   Rear blocker h=220 → y = 640 - 110 = 530 */
+/* 22 — Iceproof Base+ */
 {
   id: 22, name: "Iceproof Base+",
   targetPercent: 100,
@@ -901,10 +844,7 @@
   ]
 },
 
-/* 23 — Convertimmune Tower+
-   Teaches: Lime glow base blocks resist Rainbow conversion entirely.
-   Side junk: windmill sails — cross of two planks at 45-ish offset
-   Rear blocker h=188 → y = 640 - 94 = 546 */
+/* 23 — Convertimmune Tower+ */
 {
   id: 23, name: "Convertimmune Tower+",
   targetPercent: 100,
@@ -945,10 +885,7 @@
   ]
 },
 
-/* 24 — Mixed Proof Tower+
-   Teaches: Left pillar = fireproof, right = iceproof. Need both types.
-   Side junk: oil drums — squat wide cylinders (wide-short stone blocks)
-   Rear blocker h=212 → y = 640 - 106 = 534 */
+/* 24 — Mixed Proof Tower+ */
 {
   id: 24, name: "Mixed Proof Tower+",
   targetPercent: 100,
@@ -986,10 +923,7 @@
   ]
 },
 
-/* 25 — Ultimateproof Anchor+
-   Teaches: Magenta glow = ultimateproof. Ultimate shot won't clear it.
-   Side junk: radar dishes — tall post with wide flat top
-   Rear blocker h=192 → y = 640 - 96 = 544 */
+/* 25 — Ultimateproof Anchor+*/
 {
   id: 25, name: "Ultimateproof Anchor+",
   targetPercent: 90,
@@ -1029,10 +963,7 @@
   ]
 },
 
-/* 26 — Resist Wall+
-   Teaches: Fire deals reduced damage on glowing resist blocks — takes more shots.
-   Side junk: sandbag walls — staggered offset brick pattern
-   Rear blocker h=190 → y = 640 - 95 = 545 */
+/* 26 — Resist Wall+*/
 {
   id: 26, name: "Resist Wall+",
   targetPercent: 100,
@@ -1074,10 +1005,7 @@
   ]
 },
 
-/* 27 — Puzzle Tower+
-   Teaches: Both pillars fireproof — Heavy is the only real option.
-   Side junk: rocket fins — tall thin block with two angled base wings
-   Rear blocker h=214 → y = 640 - 107 = 533 */
+/* 27 — Puzzle Tower+ */
 {
   id: 27, name: "Puzzle Tower+",
   targetPercent: 100,
@@ -1114,10 +1042,7 @@
   ]
 },
 
-/* 28 — Bounce Scaling+
-   Teaches: Wide base means more surface for ricochets — aim for gaps.
-   Side junk: pinball bumpers — small tight clusters of round-feel blocks
-   Rear blocker h=186 → y = 640 - 93 = 547 */
+/* 28 — Bounce Scaling+ */
 {
   id: 28, name: "Bounce Scaling+",
   targetPercent: 100,
@@ -1156,10 +1081,7 @@
   ]
 },
 
-/* 29 — Center Blast+
-   Teaches: Center stone is the keystone — remove it and both sides fall.
-   Side junk: totem poles — three stacked blocks of decreasing width
-   Rear blocker h=190 → y = 640 - 95 = 545 */
+/* 29 — Center Blast+*/
 {
   id: 29, name: "Center Blast+",
   targetPercent: 100,
@@ -1198,10 +1120,7 @@
   ]
 },
 
-/* 30 — Three-Zone Traits+
-   Teaches: Left=fireproof, center=soft, right=iceproof. Three tools needed.
-   Side junk: fallen columns — long horizontal blocks at ground level
-   Rear blocker h=188 → y = 640 - 94 = 546 */
+/* 30 — Three-Zone Traits+ */
 {
   id: 30, name: "Three-Zone Traits+",
   targetPercent: 100,
@@ -1260,10 +1179,7 @@
   Collapse sequencing AND immune blocks. Both required.
 ============================================================ */
 
-/* 31 — Delayed Collapse+
-   Teaches: Hit the bridge first, then the towers fall on each other.
-   Side junk: diving boards — horizontal plank cantilevered off a short post
-   Rear blocker h=228 → y = 640 - 114 = 526 */
+/* 31 — Delayed Collapse+*/
 {
   id: 31, name: "Delayed Collapse+",
   targetPercent: 100,
@@ -1302,10 +1218,7 @@
   ]
 },
 
-/* 32 — Immune Bridge+
-   Teaches: The ultimateproof bridge must be taken by Normal/Heavy — not Ultimate.
-   Side junk: tank traps — X-shaped cross blocks (two planks crossing)
-   Rear blocker h=230 → y = 640 - 115 = 525 */
+/* 32 — Immune Bridge+ */
 {
   id: 32, name: "Immune Bridge+",
   targetPercent: 100,
@@ -1345,10 +1258,7 @@
   ]
 },
 
-/* 33 — Fireproof Shell+
-   Teaches: The burnimmune center blocks need Heavy to crack — Fire bounces off.
-   Side junk: hay bales — wide short soft blocks stacked offset like bricks
-   Rear blocker h=228 → y = 640 - 114 = 526 */
+/* 33 — Fireproof Shell+*/
 {
   id: 33, name: "Fireproof Shell+",
   targetPercent: 100,
@@ -1391,10 +1301,7 @@
   ]
 },
 
-/* 34 — Dual Illusion+
-   Teaches: Left looks easy (glass column), right looks hard (stone column) — swap your instinct.
-   Side junk: ship masts — tall thin post with a crossbeam
-   Rear blocker h=226 → y = 640 - 113 = 527 */
+/* 34 — Dual Illusion+ */
 {
   id: 34, name: "Dual Illusion+",
   targetPercent: 100,
@@ -1431,10 +1338,7 @@
   ]
 },
 
-/* 35 — Immunity Collapse+
-   Teaches: Fireproof left anchor stays standing — hit the right tower to collapse onto it.
-   Side junk: lego studs — small square blocks in a tight row on a base plate
-   Rear blocker h=232 → y = 640 - 116 = 524 */
+/* 35 — Immunity Collapse+ */
 {
   id: 35, name: "Immunity Collapse+",
   targetPercent: 100,
@@ -1475,10 +1379,7 @@
   ]
 },
 
-/* 36 — Top First+
-   Teaches: Convertimmune pillars ignore Rainbow — clear the top wood layer first to expose base.
-   Side junk: mushroom shapes — wide cap on a narrow stem
-   Rear blocker h=240 → y = 640 - 120 = 520 */
+/* 36 — Top First+ */
 {
   id: 36, name: "Top First+",
   targetPercent: 100,
@@ -1523,10 +1424,7 @@
   ]
 },
 
-/* 37 — Heavy-Only Core+
-   Teaches: Heavyproof soft flanks absorb Normal hits — use Heavy on center stone.
-   Side junk: satellite dishes — round-feel cluster (square + two wings)
-   Rear blocker h=194 → y = 640 - 97 = 543 */
+/* 37 — Heavy-Only Core+ */
 {
   id: 37, name: "Heavy-Only Core+",
   targetPercent: 100,
@@ -1568,10 +1466,7 @@
   ]
 },
 
-/* 38 — Collapse Direction+
-   Teaches: Hit left glass tower to topple it rightward onto the stone tower.
-   Side junk: speed bumps — low wide humps at ground level
-   Rear blocker h=236 → y = 640 - 118 = 522 */
+/* 38 — Collapse Direction+ */
 {
   id: 38, name: "Collapse Direction+",
   targetPercent: 100,
@@ -1606,10 +1501,7 @@
   ]
 },
 
-/* 39 — Setup Shot+
-   Teaches: First shot clears the glass pin — second shot knocks the whole structure.
-   Side junk: domino run — five thin verticals in a descending staircase
-   Rear blocker h=232 → y = 640 - 116 = 524 */
+/* 39 — Setup Shot+ */
 {
   id: 39, name: "Setup Shot+",
   targetPercent: 100,
@@ -1652,10 +1544,7 @@
   ]
 },
 
-/* 40 — Immune Domino+
-   Teaches: Ultimateproof left pillar stays — use it as a ramp to knock the right structure.
-   Side junk: crate stacks — chunky square wood blocks in an L-shape
-   Rear blocker h=234 → y = 640 - 117 = 523 */
+/* 40 — Immune Domino+ */
 {
   id: 40, name: "Immune Domino+",
   targetPercent: 100,
@@ -1712,9 +1601,7 @@
   Planning required. Second attempts are execution.
 ============================================================ */
 
-/* 41 — Three Stack System++
-   Side junk: spinning tops — diamond shape (square rotated, made of 2 triangular-feel blocks)
-   Rear blocker h=238 → y = 640 - 119 = 521 */
+/* 41 — Three Stack System++ */
 {
   id: 41, name: "Three Stack System++",
   targetPercent: 100,
@@ -1761,9 +1648,7 @@
   ]
 },
 
-/* 42 — Asymmetric Immunity++
-   Side junk: crow's nests — tall post with a box on top
-   Rear blocker h=240 → y = 640 - 120 = 520 */
+/* 42 — Asymmetric Immunity++ */
 {
   id: 42, name: "Asymmetric Immunity++",
   targetPercent: 100,
@@ -1810,9 +1695,7 @@
   ]
 },
 
-/* 43 — Float and Ground++
-   Side junk: anchor shapes — wide bottom, thin shank, crossbar near top
-   Rear blocker h=244 → y = 640 - 122 = 518 */
+/* 43 — Float and Ground++ */
 {
   id: 43, name: "Float and Ground++",
   targetPercent: 100,
@@ -1854,9 +1737,7 @@
   ]
 },
 
-/* 44 — Immune Fort++
-   Side junk: barbican towers — two pillars with a crenellated top bar
-   Rear blocker h=244 → y = 640 - 122 = 518 */
+/* 44 — Immune Fort++ */
 {
   id: 44, name: "Immune Fort++",
   targetPercent: 100,
@@ -1903,9 +1784,7 @@
   ]
 },
 
-/* 45 — Precision Only++
-   Side junk: periscopes — L-shaped pipe (vertical + horizontal elbow)
-   Rear blocker h=278 → y = 640 - 139 = 501 */
+/* 45 — Precision Only++ */
 {
   id: 45, name: "Precision Only++",
   targetPercent: 100,
@@ -1945,9 +1824,7 @@
   ]
 },
 
-/* 46 — Fireproof Cage++
-   Side junk: oil rigs — wide base, narrowing mid section, small platform top
-   Rear blocker h=250 → y = 640 - 125 = 515 */
+/* 46 — Fireproof Cage++*/
 {
   id: 46, name: "Fireproof Cage++",
   targetPercent: 100,
@@ -1990,9 +1867,7 @@
   ]
 },
 
-/* 47 — Delayed Trap++
-   Side junk: trebuchets — long arm (horizontal plank) balanced on a pivot post
-   Rear blocker h=248 → y = 640 - 124 = 516 */
+/* 47 — Delayed Trap++*/
 {
   id: 47, name: "Delayed Trap++",
   targetPercent: 100,
@@ -2036,9 +1911,7 @@
   ]
 },
 
-/* 48 — Full Synergy++
-   Side junk: signal towers — tall lattice feel (post with two crossbars + base)
-   Rear blocker h=252 → y = 640 - 126 = 514 */
+/* 48 — Full Synergy++*/
 {
   id: 48, name: "Full Synergy++",
   targetPercent: 100,
@@ -2091,9 +1964,7 @@
   ]
 },
 
-/* 49 — Domino Chain++
-   Side junk: suspension bridge cables — diagonal lines of small blocks
-   Rear blocker h=258 → y = 640 - 129 = 511 */
+/* 49 — Domino Chain++ */
 {
   id: 49, name: "Domino Chain++",
   targetPercent: 100,
@@ -2147,9 +2018,7 @@
   ]
 },
 
-/* 50 — BOOHA ENDGAME+++
-   Side junk: fortified walls — thick stone base with two guard towers
-   Rear blocker h=272 → y = 640 - 136 = 504 */
+/* 50 — BOOHA ENDGAME+++ */
 {
   id: 50, name: "BOOHA ENDGAME+++",
   targetPercent: 95,
@@ -2217,9 +2086,5 @@
 },
 
 window.BOOHA_DESTRUCTION_LEVELS = [
-  // paste levels 1-10 content here
-  // paste levels 11-20 content here
-  // paste levels 21-30 content here
-  // paste levels 31-40 content here
-  // paste levels 41-50 content here
+
 ]; // end BOOHA_DESTRUCTION_LEVELS
