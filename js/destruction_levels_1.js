@@ -13,7 +13,8 @@
   No traits. Learn physics, Booha powers, basic collapse.
 ============================================================ */
 
-/* 1 — First Shot+ */
+window.BOOHA_DESTRUCTION_LEVELS = [
+ /* 1 — First Shot+ */
 {
   id: 1, name: "First Shot+",
   targetPercent: 100,
@@ -2085,6 +2086,5 @@
   ]
 },
 
-window.BOOHA_DESTRUCTION_LEVELS = [
 
 ]; // end BOOHA_DESTRUCTION_LEVELS
